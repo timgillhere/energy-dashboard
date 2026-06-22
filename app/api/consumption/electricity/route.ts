@@ -1,0 +1,40 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const OCTOPUS_BASE = "https://api.octopus.energy/v1";
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const mpan = searchParams.get("mpan");
+  const serial = searchParams.get("serial");
+  const periodFrom = searchParams.get("period_from");
+  const periodTo = searchParams.get("period_to");
+  const pageSize = searchParams.get("page_size") || "100";
+
+  if (!mpan || !serial) {
+    return NextResponse.json({ error: "Missing mpan or serial" }, { status: 400 });
+  }
+
+  const apiKey = process.env.OCTOPUS_API_KEY;
+  if (!apiKey) {
+    return NextResponse.json({ error: "API key not configured on server" }, { status: 500 });
+  }
+
+  const auth = "Basic " + Buffer.from(apiKey + ":").toString("base64");
+  let url = `${OCTOPUS_BASE}/electricity-meter-points/${mpan}/meters/${serial}/consumption/?page_size=${pageSize}&order_by=period`;
+  if (periodFrom) url += `&period_from=${periodFrom}`;
+  if (periodTo) url += `&period_to=${periodTo}`;
+
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: auth },
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) {
+      return NextResponse.json({ error: `Octopus API error: ${res.status}` }, { status: res.status });
+    }
+    const data = await res.json();
+    return NextResponse.json(data);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch electricity consumption" }, { status: 500 });
+  }
+}
