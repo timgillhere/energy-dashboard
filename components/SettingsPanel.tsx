@@ -93,17 +93,17 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         </p>
         <Field
           label="Product Code"
-          hint="e.g. SILVER-FLEX-22-11-25"
+          hint="e.g. AGILE-24-10-01"
           value={form.productCode}
           onChange={(v) => set("productCode", v)}
-          placeholder="SILVER-FLEX-22-11-25"
+          placeholder="AGILE-24-10-01"
         />
         <Field
           label="Tariff Code"
-          hint="e.g. E-1R-SILVER-FLEX-22-11-25-A (change trailing letter to your region)"
+          hint="Change the trailing letter to your region (A=E.England, J=S.Wales, C=Midlands, etc.)"
           value={form.tariffCode}
           onChange={(v) => set("tariffCode", v)}
-          placeholder="E-1R-SILVER-FLEX-22-11-25-A"
+          placeholder="E-1R-AGILE-24-10-01-J"
         />
       </Card>
 

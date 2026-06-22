@@ -8,6 +8,7 @@ import { getRateStatus, STATUS_COLORS, STATUS_BG } from "@/lib/rateStatus";
 interface RateHeroProps {
   todayRate: Rate | null;
   tomorrowRate: Rate | null;
+  tomorrowRates: Rate[];
   settings: Settings;
   lastFetch: Date | null;
   loading: boolean;
@@ -17,6 +18,7 @@ interface RateHeroProps {
 export default function RateHero({
   todayRate,
   tomorrowRate,
+  tomorrowRates,
   settings,
   lastFetch,
   loading,
@@ -24,14 +26,24 @@ export default function RateHero({
 }: RateHeroProps) {
   const rate = todayRate?.value_inc_vat ?? null;
   const status = rate !== null ? getRateStatus(rate, settings.alertThreshold) : null;
-  const tomorrowVal = tomorrowRate?.value_inc_vat ?? null;
+  const tomorrowMin = tomorrowRate?.value_inc_vat ?? null;
+
+  // When the current slot expires
+  const slotEnd = todayRate?.valid_to
+    ? new Date(todayRate.valid_to).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+    : null;
+
+  // Tomorrow stats
+  const tomorrowAvg = tomorrowRates.length
+    ? tomorrowRates.reduce((s, r) => s + r.value_inc_vat, 0) / tomorrowRates.length
+    : null;
 
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-            Today's Tracker Rate
+            Current Agile Rate
           </p>
           {rate !== null ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
@@ -51,9 +63,16 @@ export default function RateHero({
           ) : (
             <div style={{ fontSize: 48, color: "#374151" }}>—</div>
           )}
-          <p style={{ color: "#6b7280", fontSize: 13, marginTop: 8 }}>
-            + {settings.electricityStandingCharge.toFixed(1)}p/day standing charge
-          </p>
+          <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+            <p style={{ color: "#6b7280", fontSize: 13 }}>
+              + {settings.electricityStandingCharge.toFixed(1)}p/day standing charge
+            </p>
+            {slotEnd && (
+              <p style={{ color: "#4b5563", fontSize: 13 }}>
+                Rate until {slotEnd}
+              </p>
+            )}
+          </div>
         </div>
 
         <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
@@ -78,13 +97,13 @@ export default function RateHero({
           </button>
           {lastFetch && (
             <p style={{ color: "#4b5563", fontSize: 11 }}>
-              {lastFetch.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+              Fetched {lastFetch.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
         </div>
       </div>
 
-      {/* Threshold indicator */}
+      {/* Go/no-go banner */}
       {status && rate !== null && (
         <div
           style={{
@@ -96,40 +115,50 @@ export default function RateHero({
           }}
         >
           <span style={{ fontSize: 13, color: STATUS_COLORS[status], fontWeight: 500 }}>
-            {status === "cheap" && "✅ "}
-            {status === "borderline" && "⚠️ "}
-            {status === "expensive" && "❌ "}
-            {status === "cheap" && `Good time to run appliances — rate is ${rate.toFixed(2)}p`}
-            {status === "borderline" && `Borderline — consider waiting (threshold: ${settings.alertThreshold}p)`}
-            {status === "expensive" && `Expensive right now — delay if you can`}
+            {status === "cheap" && `✅ Good time to run appliances or charge the van — rate is ${rate.toFixed(2)}p`}
+            {status === "borderline" && `⚠️ Borderline — consider waiting (threshold: ${settings.alertThreshold}p)`}
+            {status === "expensive" && `❌ Expensive right now — delay if you can`}
           </span>
         </div>
       )}
 
-      {/* Tomorrow's rate */}
-      {tomorrowVal !== null && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e" }}>
-          <span style={{ color: "#6b7280", fontSize: 13 }}>Tomorrow: </span>
-          <span
-            style={{
-              fontSize: 18,
-              fontWeight: 700,
-              color:
-                tomorrowVal <= settings.alertThreshold
-                  ? "#a3e635"
-                  : tomorrowVal <= settings.alertThreshold * 1.2
-                  ? "#f97316"
-                  : "#ef4444",
-            }}
-          >
-            {tomorrowVal.toFixed(2)}p/kWh
-          </span>
-          {rate !== null && (
-            <span style={{ color: "#6b7280", fontSize: 13, marginLeft: 8 }}>
-              ({tomorrowVal < rate ? `↓ ${(rate - tomorrowVal).toFixed(2)}p cheaper` : `↑ ${(tomorrowVal - rate).toFixed(2)}p more`})
+      {/* Tomorrow's rates */}
+      {tomorrowMin !== null && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e", display: "flex", gap: 24, flexWrap: "wrap" }}>
+          <div>
+            <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>Tomorrow min</span>
+            <span
+              style={{
+                fontSize: 18,
+                fontWeight: 700,
+                color: tomorrowMin <= settings.alertThreshold ? "#a3e635" : tomorrowMin <= settings.alertThreshold * 1.2 ? "#f97316" : "#ef4444",
+              }}
+            >
+              {tomorrowMin.toFixed(2)}p
             </span>
+          </div>
+          {tomorrowAvg !== null && (
+            <div>
+              <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>Tomorrow avg</span>
+              <span style={{ fontSize: 18, fontWeight: 700, color: "#9ca3af" }}>{tomorrowAvg.toFixed(2)}p</span>
+            </div>
+          )}
+          {rate !== null && (
+            <div style={{ display: "flex", alignItems: "flex-end" }}>
+              <span style={{ color: "#4b5563", fontSize: 13 }}>
+                {tomorrowAvg !== null && tomorrowAvg < rate
+                  ? `↓ Tomorrow looks cheaper on average`
+                  : `↑ Tomorrow looks more expensive on average`}
+              </span>
+            </div>
           )}
         </div>
+      )}
+
+      {tomorrowRates.length === 0 && (
+        <p style={{ color: "#374151", fontSize: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e" }}>
+          Tomorrow's rates not yet published — usually available after 4pm
+        </p>
       )}
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>

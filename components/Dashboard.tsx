@@ -29,6 +29,7 @@ export default function Dashboard() {
 
   const [todayRate, setTodayRate] = useState<Rate | null>(null);
   const [tomorrowRate, setTomorrowRate] = useState<Rate | null>(null);
+  const [tomorrowRates, setTomorrowRates] = useState<Rate[]>([]);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
 
@@ -74,14 +75,24 @@ export default function Dashboard() {
       const results: Rate[] = data.results ?? [];
 
       const now = new Date();
-      const todayStr = now.toISOString().slice(0, 10);
       const tomorrowStr = new Date(now.getTime() + 86400000).toISOString().slice(0, 10);
 
-      const today = results.find((r) => r.valid_from?.startsWith(todayStr)) ?? null;
-      const tomorrow = results.find((r) => r.valid_from?.startsWith(tomorrowStr)) ?? null;
+      // For Agile (and Tracker): find the slot active right now
+      const current = results.find((r) => {
+        const from = new Date(r.valid_from);
+        const to = r.valid_to ? new Date(r.valid_to) : null;
+        return from <= now && (to === null || to > now);
+      }) ?? null;
 
-      setTodayRate(today);
-      setTomorrowRate(tomorrow);
+      // Tomorrow's slots — cheapest as the headline, keep all for display
+      const tomorrowSlots = results.filter((r) => r.valid_from?.startsWith(tomorrowStr));
+      const cheapestTomorrow = tomorrowSlots.length
+        ? tomorrowSlots.reduce((min, r) => r.value_inc_vat < min.value_inc_vat ? r : min)
+        : null;
+
+      setTodayRate(current);
+      setTomorrowRate(cheapestTomorrow);
+      setTomorrowRates(tomorrowSlots);
       setLastFetch(new Date());
     } catch (e) {
       console.error("Failed to fetch rates", e);
@@ -122,6 +133,12 @@ export default function Dashboard() {
     fetchRates();
     fetchConsumption();
   }, [fetchRates, fetchConsumption]);
+
+  // Auto-refresh rates every 30 min so the active Agile slot stays current
+  useEffect(() => {
+    const id = setInterval(fetchRates, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [fetchRates]);
 
   // Register service worker
   useEffect(() => {
@@ -172,6 +189,7 @@ export default function Dashboard() {
             <RateHero
               todayRate={todayRate}
               tomorrowRate={tomorrowRate}
+              tomorrowRates={tomorrowRates}
               settings={settings}
               lastFetch={lastFetch}
               loading={ratesLoading}
