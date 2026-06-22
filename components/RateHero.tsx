@@ -1,51 +1,85 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Settings } from "lucide-react";
 import Card from "./Card";
-import type { Rate, Settings } from "@/lib/types";
+import type { Rate, Settings as SettingsType } from "@/lib/types";
 import { getRateStatus, STATUS_COLORS, STATUS_BG } from "@/lib/rateStatus";
 
 interface RateHeroProps {
-  todayRate: Rate | null;
+  elecRate: Rate | null;
+  gasRate: Rate | null;
   tomorrowRate: Rate | null;
   tomorrowRates: Rate[];
-  settings: Settings;
+  settings: SettingsType;
   lastFetch: Date | null;
   loading: boolean;
+  error: string | null;
   onRefresh: () => void;
+  onGoToSettings: () => void;
 }
 
 export default function RateHero({
-  todayRate,
+  elecRate,
+  gasRate,
   tomorrowRate,
   tomorrowRates,
   settings,
   lastFetch,
   loading,
+  error,
   onRefresh,
+  onGoToSettings,
 }: RateHeroProps) {
-  const rate = todayRate?.value_inc_vat ?? null;
+  const rate = elecRate?.value_inc_vat ?? null;
   const status = rate !== null ? getRateStatus(rate, settings.alertThreshold) : null;
   const tomorrowMin = tomorrowRate?.value_inc_vat ?? null;
 
-  // When the current slot expires
-  const slotEnd = todayRate?.valid_to
-    ? new Date(todayRate.valid_to).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+  const slotEnd = elecRate?.valid_to
+    ? new Date(elecRate.valid_to).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
     : null;
 
-  // Tomorrow stats
-  const tomorrowAvg = tomorrowRates.length
-    ? tomorrowRates.reduce((s, r) => s + r.value_inc_vat, 0) / tomorrowRates.length
-    : null;
+  const tomorrowAvg =
+    tomorrowRates.length > 0
+      ? tomorrowRates.reduce((s, r) => s + r.value_inc_vat, 0) / tomorrowRates.length
+      : null;
+
+  // Is this a half-hourly tariff (Agile) or daily (Tracker)?
+  // If the slot duration is ~30 min, it's half-hourly
+  const isHalfHourly = elecRate?.valid_to
+    ? new Date(elecRate.valid_to).getTime() - new Date(elecRate.valid_from).getTime() <= 30 * 60 * 1000 + 60000
+    : false;
 
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
+        <div style={{ flex: 1 }}>
           <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
-            Current Agile Rate
+            Tracker Rate — Electricity
           </p>
-          {rate !== null ? (
+
+          {error ? (
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>{error}</p>
+              <button
+                onClick={onGoToSettings}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "#1e1e1e",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: 10,
+                  padding: "8px 14px",
+                  color: "#a3e635",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+              >
+                <Settings size={13} />
+                Open Settings
+              </button>
+            </div>
+          ) : rate !== null ? (
             <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
               <span
                 style={{
@@ -61,21 +95,25 @@ export default function RateHero({
               <span style={{ fontSize: 24, color: "#6b7280", fontWeight: 500 }}>p/kWh</span>
             </div>
           ) : (
-            <div style={{ fontSize: 48, color: "#374151" }}>—</div>
+            <div style={{ fontSize: 48, color: "#374151", lineHeight: 1, marginBottom: 4 }}>—</div>
           )}
-          <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
-            <p style={{ color: "#6b7280", fontSize: 13 }}>
-              + {settings.electricityStandingCharge.toFixed(1)}p/day standing charge
-            </p>
-            {slotEnd && (
-              <p style={{ color: "#4b5563", fontSize: 13 }}>
-                Rate until {slotEnd}
+
+          {!error && (
+            <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+              <p style={{ color: "#6b7280", fontSize: 13 }}>
+                + {settings.electricityStandingCharge.toFixed(1)}p/day standing charge
               </p>
-            )}
-          </div>
+              {slotEnd && isHalfHourly && (
+                <p style={{ color: "#4b5563", fontSize: 13 }}>Until {slotEnd}</p>
+              )}
+              {slotEnd && !isHalfHourly && (
+                <p style={{ color: "#4b5563", fontSize: 13 }}>Valid today</p>
+              )}
+            </div>
+          )}
         </div>
 
-        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, marginLeft: 16 }}>
           <button
             onClick={onRefresh}
             disabled={loading}
@@ -84,7 +122,7 @@ export default function RateHero({
               border: "1px solid #2a2a2a",
               borderRadius: 10,
               padding: "8px 12px",
-              cursor: "pointer",
+              cursor: loading ? "not-allowed" : "pointer",
               color: "#9ca3af",
               display: "flex",
               alignItems: "center",
@@ -97,17 +135,26 @@ export default function RateHero({
           </button>
           {lastFetch && (
             <p style={{ color: "#4b5563", fontSize: 11 }}>
-              Fetched {lastFetch.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+              {lastFetch.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
         </div>
       </div>
 
+      {/* Gas rate row */}
+      {gasRate !== null && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e", display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ color: "#4b5563", fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>Gas</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "#f97316" }}>{gasRate.value_inc_vat.toFixed(2)}p/kWh</span>
+          <span style={{ color: "#4b5563", fontSize: 12 }}>+ {settings.gasStandingCharge.toFixed(1)}p/day</span>
+        </div>
+      )}
+
       {/* Go/no-go banner */}
-      {status && rate !== null && (
+      {!error && status && rate !== null && (
         <div
           style={{
-            marginTop: 16,
+            marginTop: 14,
             padding: "10px 14px",
             borderRadius: 12,
             background: STATUS_BG[status],
@@ -115,49 +162,63 @@ export default function RateHero({
           }}
         >
           <span style={{ fontSize: 13, color: STATUS_COLORS[status], fontWeight: 500 }}>
-            {status === "cheap" && `✅ Good time to run appliances or charge the van — rate is ${rate.toFixed(2)}p`}
-            {status === "borderline" && `⚠️ Borderline — consider waiting (threshold: ${settings.alertThreshold}p)`}
+            {status === "cheap" &&
+              `✅ Good time to run appliances or charge the van — rate is ${rate.toFixed(2)}p`}
+            {status === "borderline" &&
+              `⚠️ Borderline — consider waiting (threshold: ${settings.alertThreshold}p)`}
             {status === "expensive" && `❌ Expensive right now — delay if you can`}
           </span>
         </div>
       )}
 
-      {/* Tomorrow's rates */}
-      {tomorrowMin !== null && (
-        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e", display: "flex", gap: 24, flexWrap: "wrap" }}>
+      {/* Tomorrow */}
+      {!error && tomorrowMin !== null && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e", display: "flex", gap: 24, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div>
-            <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>Tomorrow min</span>
+            <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>
+              {isHalfHourly ? "Tomorrow cheapest" : "Tomorrow"}
+            </span>
             <span
               style={{
                 fontSize: 18,
                 fontWeight: 700,
-                color: tomorrowMin <= settings.alertThreshold ? "#a3e635" : tomorrowMin <= settings.alertThreshold * 1.2 ? "#f97316" : "#ef4444",
+                color:
+                  tomorrowMin <= settings.alertThreshold
+                    ? "#a3e635"
+                    : tomorrowMin <= settings.alertThreshold * 1.2
+                    ? "#f97316"
+                    : "#ef4444",
               }}
             >
               {tomorrowMin.toFixed(2)}p
             </span>
           </div>
-          {tomorrowAvg !== null && (
+          {isHalfHourly && tomorrowAvg !== null && (
             <div>
-              <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>Tomorrow avg</span>
+              <span style={{ color: "#4b5563", fontSize: 11, display: "block" }}>avg</span>
               <span style={{ fontSize: 18, fontWeight: 700, color: "#9ca3af" }}>{tomorrowAvg.toFixed(2)}p</span>
             </div>
           )}
-          {rate !== null && (
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <span style={{ color: "#4b5563", fontSize: 13 }}>
-                {tomorrowAvg !== null && tomorrowAvg < rate
-                  ? `↓ Tomorrow looks cheaper on average`
-                  : `↑ Tomorrow looks more expensive on average`}
-              </span>
-            </div>
+          {rate !== null && tomorrowAvg !== null && (
+            <span style={{ color: "#4b5563", fontSize: 13, paddingBottom: 2 }}>
+              {tomorrowAvg < rate ? "↓ looks cheaper tomorrow" : "↑ looks pricier tomorrow"}
+            </span>
           )}
         </div>
       )}
 
-      {tomorrowRates.length === 0 && (
+      {!error && !loading && rate === null && !settings.productCode && (
+        <p style={{ color: "#4b5563", fontSize: 13, marginTop: 12 }}>
+          No tariff configured.{" "}
+          <button onClick={onGoToSettings} style={{ background: "none", border: "none", color: "#a3e635", cursor: "pointer", fontSize: 13, padding: 0 }}>
+            Open Settings to auto-detect →
+          </button>
+        </p>
+      )}
+
+      {!error && tomorrowRates.length === 0 && rate !== null && (
         <p style={{ color: "#374151", fontSize: 12, marginTop: 12, paddingTop: 12, borderTop: "1px solid #1e1e1e" }}>
-          Tomorrow's rates not yet published — usually available after 4pm
+          Tomorrow's rate not yet published — usually available after 5pm
         </p>
       )}
 

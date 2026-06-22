@@ -8,6 +8,7 @@ interface SpendTodayProps {
   electricityData: ConsumptionInterval[];
   gasData: ConsumptionInterval[];
   todayRate: number | null;
+  gasUnitRate: number;
   settings: Settings;
 }
 
@@ -24,10 +25,10 @@ function calcSpend(
   return { kwh, cost };
 }
 
-export default function SpendToday({ electricityData, gasData, todayRate, settings }: SpendTodayProps) {
+export default function SpendToday({ electricityData, gasData, todayRate, gasUnitRate, settings }: SpendTodayProps) {
   const elecRate = todayRate ?? 0;
   const elec = calcSpend(electricityData, elecRate, settings.electricityStandingCharge);
-  const gas = calcSpend(gasData, settings.gasUnitRate, settings.gasStandingCharge);
+  const gas = calcSpend(gasData, gasUnitRate, settings.gasStandingCharge);
   const total = elec.cost + gas.cost;
 
   return (

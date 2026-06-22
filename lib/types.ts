@@ -5,6 +5,7 @@ export interface Settings {
   gasSerial: string;
   productCode: string;
   tariffCode: string;
+  gasTariffCode: string;
   gasUnitRate: number;
   gasStandingCharge: number;
   electricityStandingCharge: number;
