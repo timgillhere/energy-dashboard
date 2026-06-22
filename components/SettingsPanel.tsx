@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Zap } from "lucide-react";
 import Card from "./Card";
 import type { Settings } from "@/lib/types";
 import { saveSettings } from "@/lib/settings";
@@ -54,6 +55,8 @@ function Field({
 export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) {
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [detectMsg, setDetectMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   function set(key: keyof Settings, value: string | number | boolean) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -64,6 +67,43 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
     onSave(form);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleAutoDetect() {
+    if (!form.mpan && !form.mprn) {
+      setDetectMsg({ ok: false, text: "Enter your MPAN and/or MPRN first." });
+      return;
+    }
+    setDetecting(true);
+    setDetectMsg(null);
+    try {
+      const params = new URLSearchParams();
+      if (form.mpan) params.set("mpan", form.mpan);
+      if (form.mprn) params.set("mprn", form.mprn);
+      const res = await fetch(`/api/tariff?${params}`);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setDetectMsg({ ok: false, text: data.error ?? "Auto-detect failed — check MPAN/MPRN and API key." });
+        return;
+      }
+      const { electricityTariffCode, gasTariffCode, productCode, mpan, mprn } = data;
+      setForm((prev) => ({
+        ...prev,
+        ...(productCode ? { productCode } : {}),
+        ...(electricityTariffCode ? { tariffCode: electricityTariffCode } : {}),
+        ...(gasTariffCode ? { gasTariffCode } : {}),
+        ...(mpan && !prev.mpan ? { mpan } : {}),
+        ...(mprn && !prev.mprn ? { mprn } : {}),
+      }));
+      setDetectMsg({
+        ok: true,
+        text: `Detected: ${electricityTariffCode ?? "—"} / gas: ${gasTariffCode ?? "—"}`,
+      });
+    } catch {
+      setDetectMsg({ ok: false, text: "Network error during auto-detect." });
+    } finally {
+      setDetecting(false);
+    }
   }
 
   return (
@@ -83,27 +123,79 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         </p>
         <Field label="MPRN" value={form.mprn} onChange={(v) => set("mprn", v)} placeholder="1234567890" />
         <Field label="Meter Serial Number" value={form.gasSerial} onChange={(v) => set("gasSerial", v)} placeholder="G1A00000" />
-        <Field label="Unit Rate (p/kWh)" value={String(form.gasUnitRate)} onChange={(v) => set("gasUnitRate", parseFloat(v) || 0)} type="number" />
         <Field label="Standing Charge (p/day)" value={String(form.gasStandingCharge)} onChange={(v) => set("gasStandingCharge", parseFloat(v) || 0)} type="number" />
+        <Field
+          label="Fallback unit rate (p/kWh)"
+          hint="Used if the Tracker gas rate can't be fetched automatically"
+          value={String(form.gasUnitRate)}
+          onChange={(v) => set("gasUnitRate", parseFloat(v) || 0)}
+          type="number"
+        />
       </Card>
 
       <Card>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
-          Tracker Tariff
-        </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            Tracker Tariff
+          </p>
+          <button
+            onClick={handleAutoDetect}
+            disabled={detecting}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "#1e2e0e",
+              border: "1px solid #a3e63544",
+              borderRadius: 10,
+              padding: "7px 14px",
+              color: "#a3e635",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: detecting ? "not-allowed" : "pointer",
+            }}
+          >
+            <Zap size={13} />
+            {detecting ? "Detecting…" : "Auto-detect from MPAN"}
+          </button>
+        </div>
+
+        {detectMsg && (
+          <div
+            style={{
+              padding: "8px 12px",
+              borderRadius: 10,
+              marginBottom: 12,
+              background: detectMsg.ok ? "rgba(163,230,53,0.08)" : "rgba(239,68,68,0.08)",
+              border: `1px solid ${detectMsg.ok ? "#a3e63544" : "#ef444444"}`,
+              fontSize: 12,
+              color: detectMsg.ok ? "#a3e635" : "#ef4444",
+            }}
+          >
+            {detectMsg.text}
+          </div>
+        )}
+
         <Field
           label="Product Code"
-          hint="e.g. AGILE-24-10-01"
+          hint="e.g. SILVER-FLEX-22-11-25 — auto-detected from your MPAN"
           value={form.productCode}
           onChange={(v) => set("productCode", v)}
-          placeholder="AGILE-24-10-01"
+          placeholder="SILVER-FLEX-22-11-25"
         />
         <Field
-          label="Tariff Code"
-          hint="Change the trailing letter to your region (A=E.England, J=S.Wales, C=Midlands, etc.)"
+          label="Electricity Tariff Code"
+          hint="e.g. E-1R-SILVER-FLEX-22-11-25-J (trailing letter = your region)"
           value={form.tariffCode}
           onChange={(v) => set("tariffCode", v)}
-          placeholder="E-1R-AGILE-24-10-01-J"
+          placeholder="E-1R-SILVER-FLEX-22-11-25-J"
+        />
+        <Field
+          label="Gas Tariff Code"
+          hint="e.g. G-1R-SILVER-FLEX-22-11-25-J — auto-detected or derived from electricity code"
+          value={form.gasTariffCode}
+          onChange={(v) => set("gasTariffCode", v)}
+          placeholder="G-1R-SILVER-FLEX-22-11-25-J"
         />
       </Card>
 
@@ -113,7 +205,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         </p>
         <Field
           label="Rate threshold (p/kWh)"
-          hint="Get notified when the rate drops below this level"
+          hint="Get notified when the electricity rate drops below this level"
           value={String(form.alertThreshold)}
           onChange={(v) => set("alertThreshold", parseFloat(v) || 0)}
           type="number"
@@ -123,27 +215,10 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
           <span style={{ color: "#9ca3af", fontSize: 13 }}>Rate alerts enabled</span>
           <div
             onClick={() => set("alertsEnabled", !form.alertsEnabled)}
-            style={{
-              width: 44,
-              height: 24,
-              borderRadius: 12,
-              background: form.alertsEnabled ? "#a3e635" : "#1e1e1e",
-              position: "relative",
-              cursor: "pointer",
-              transition: "background 0.2s",
-            }}
+            style={{ width: 44, height: 24, borderRadius: 12, background: form.alertsEnabled ? "#a3e635" : "#1e1e1e", position: "relative", cursor: "pointer", transition: "background 0.2s" }}
           >
             <div
-              style={{
-                position: "absolute",
-                top: 3,
-                left: form.alertsEnabled ? 23 : 3,
-                width: 18,
-                height: 18,
-                borderRadius: "50%",
-                background: form.alertsEnabled ? "#0a0a0a" : "#4b5563",
-                transition: "left 0.2s",
-              }}
+              style={{ position: "absolute", top: 3, left: form.alertsEnabled ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: form.alertsEnabled ? "#0a0a0a" : "#4b5563", transition: "left 0.2s" }}
             />
           </div>
         </div>
@@ -167,7 +242,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       </button>
 
       <p style={{ color: "#374151", fontSize: 11, textAlign: "center" }}>
-        Settings are stored locally in your browser. The Octopus API key is stored securely on the server.
+        Settings stored locally in your browser. Octopus API key is on the server.
       </p>
     </div>
   );

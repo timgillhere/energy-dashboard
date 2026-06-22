@@ -30,11 +30,14 @@ function findCurrentSlot(results: Rate[]): Rate | null {
   );
 }
 
-function findTomorrowSlots(results: Rate[]): Rate[] {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
-  return results.filter((r) => r.valid_from?.startsWith(tomorrowStr));
+function findTomorrowSlots(results: Rate[], currentSlot: Rate | null): Rate[] {
+  const now = new Date();
+  // All slots whose valid_from is in the future (after now)
+  // For Tracker this is the one daily slot starting tonight at 23:00 UTC
+  // For Agile this is all 48 half-hour slots for tomorrow
+  return results
+    .filter((r) => new Date(r.valid_from) > now)
+    .sort((a, b) => new Date(a.valid_from).getTime() - new Date(b.valid_from).getTime());
 }
 
 export default function Dashboard() {
@@ -98,8 +101,9 @@ export default function Dashboard() {
         return;
       }
       const elecResults: Rate[] = elecData.results ?? [];
-      setElecRate(findCurrentSlot(elecResults));
-      const tmrSlots = findTomorrowSlots(elecResults);
+      const currentSlot = findCurrentSlot(elecResults);
+      setElecRate(currentSlot);
+      const tmrSlots = findTomorrowSlots(elecResults, currentSlot);
       setTomorrowRates(tmrSlots);
       setTomorrowRate(
         tmrSlots.length
