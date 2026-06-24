@@ -26,10 +26,10 @@ Chart.register(
 );
 
 export const CHART_DEFAULTS = {
-  gridColor: "#1a1a1a",
-  tickColor: "#4b5563",
-  tooltipBg: "#1e1e1e",
-  tooltipBorder: "#2a2a2a",
-  tooltipTitle: "#ededed",
-  tooltipBody: "#9ca3af",
+  gridColor: "rgba(255,0,110,0.12)",
+  tickColor: "rgba(240,238,255,0.45)",
+  tooltipBg: "#0C0C1A",
+  tooltipBorder: "rgba(255,0,110,0.60)",
+  tooltipTitle: "#F0EEFF",
+  tooltipBody: "rgba(240,238,255,0.70)",
 };

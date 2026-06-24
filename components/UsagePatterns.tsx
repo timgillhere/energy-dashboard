@@ -24,11 +24,10 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
     const elecPattern = buildAveragePattern(electricityData);
     const gasPattern = buildAveragePattern(gasData);
 
-    // Find peak slot index
     const peakSlot = elecPattern.indexOf(Math.max(...elecPattern));
 
     const elecColors = elecPattern.map((_, i) =>
-      i === peakSlot ? "rgba(163,230,53,1)" : "rgba(163,230,53,0.45)"
+      i === peakSlot ? "rgba(0,240,255,1)" : "rgba(0,240,255,0.40)"
     );
 
     chartRef.current?.destroy();
@@ -49,7 +48,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
           {
             label: "Avg gas (kWh)",
             data: gasPattern.map((v) => parseFloat(v.toFixed(4))),
-            backgroundColor: "rgba(249,115,22,0.45)",
+            backgroundColor: "rgba(191,95,255,0.40)",
             borderRadius: 2,
             barPercentage: 0.95,
             categoryPercentage: 0.6,
@@ -63,7 +62,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "#6b7280", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -103,7 +102,6 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
     return () => chartRef.current?.destroy();
   }, [electricityData, gasData]);
 
-  // Derive plain-English insight
   const elecPattern = buildAveragePattern(electricityData);
   const peakSlot = elecPattern.indexOf(Math.max(...elecPattern));
   const peakTime = SLOT_LABELS[peakSlot];
@@ -112,7 +110,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
   return (
     <Card>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           Usage Patterns
         </p>
         <InfoTip
@@ -122,9 +120,9 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
       </div>
 
       {hasData && (
-        <p style={{ color: "#4b5563", fontSize: 12, marginBottom: 12 }}>
+        <p style={{ color: "rgba(240,238,255,0.38)", fontSize: 12, marginBottom: 12 }}>
           Your peak electricity use is typically around{" "}
-          <span style={{ color: "#a3e635", fontWeight: 600 }}>{peakTime}</span>
+          <span style={{ color: "#00F0FF", fontWeight: 600, textShadow: "0 0 8px rgba(0,240,255,0.50)" }}>{peakTime}</span>
         </p>
       )}
 
@@ -133,7 +131,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
           <canvas ref={canvasRef} />
         </div>
       ) : (
-        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
           No consumption data yet.
         </div>
       )}

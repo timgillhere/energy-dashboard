@@ -28,7 +28,7 @@ function Field({
 }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: "block", color: "#9ca3af", fontSize: 12, marginBottom: 4 }}>
+      <label style={{ display: "block", color: "rgba(240,238,255,0.45)", fontSize: 12, marginBottom: 4 }}>
         {label}
       </label>
       <input
@@ -38,16 +38,16 @@ function Field({
         placeholder={placeholder}
         style={{
           width: "100%",
-          background: "#0f0f0f",
-          border: "1px solid #2a2a2a",
-          borderRadius: 10,
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,0,110,0.25)",
+          borderRadius: 12,
           padding: "10px 12px",
-          color: "#ededed",
+          color: "#F0EEFF",
           fontSize: 14,
           outline: "none",
         }}
       />
-      {hint && <p style={{ color: "#4b5563", fontSize: 11, marginTop: 4 }}>{hint}</p>}
+      {hint && <p style={{ color: "rgba(240,238,255,0.30)", fontSize: 11, marginTop: 4 }}>{hint}</p>}
     </div>
   );
 }
@@ -111,7 +111,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <Card>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Electricity Meter
         </p>
         <Field label="MPAN" value={form.mpan} onChange={(v) => set("mpan", v)} placeholder="1200000000000" />
@@ -120,7 +120,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       </Card>
 
       <Card>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Gas Meter
         </p>
         <Field label="MPRN" value={form.mprn} onChange={(v) => set("mprn", v)} placeholder="1234567890" />
@@ -137,7 +137,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Tracker Tariff
           </p>
           <button
@@ -147,14 +147,15 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
               display: "flex",
               alignItems: "center",
               gap: 6,
-              background: "#1e2e0e",
-              border: "1px solid #a3e63544",
-              borderRadius: 10,
+              background: "rgba(0,240,255,0.08)",
+              border: "1px solid rgba(0,240,255,0.35)",
+              borderRadius: 12,
               padding: "7px 14px",
-              color: "#a3e635",
+              color: "#00F0FF",
               fontSize: 12,
               fontWeight: 600,
               cursor: detecting ? "not-allowed" : "pointer",
+              boxShadow: "0 0 10px rgba(0,240,255,0.15)",
             }}
           >
             <Zap size={13} />
@@ -166,12 +167,12 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
           <div
             style={{
               padding: "8px 12px",
-              borderRadius: 10,
+              borderRadius: 12,
               marginBottom: 12,
-              background: detectMsg.ok ? "rgba(163,230,53,0.08)" : "rgba(239,68,68,0.08)",
-              border: `1px solid ${detectMsg.ok ? "#a3e63544" : "#ef444444"}`,
+              background: detectMsg.ok ? "rgba(57,255,20,0.08)" : "rgba(255,45,120,0.08)",
+              border: `1px solid ${detectMsg.ok ? "rgba(57,255,20,0.35)" : "rgba(255,45,120,0.35)"}`,
               fontSize: 12,
-              color: detectMsg.ok ? "#a3e635" : "#ef4444",
+              color: detectMsg.ok ? "#39FF14" : "#FF2D78",
             }}
           >
             {detectMsg.text}
@@ -202,7 +203,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       </Card>
 
       <Card>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Alert Settings
         </p>
         <Field
@@ -214,13 +215,33 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
           placeholder="25"
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "#9ca3af", fontSize: 13 }}>Rate alerts enabled</span>
+          <span style={{ color: "rgba(240,238,255,0.55)", fontSize: 13 }}>Rate alerts enabled</span>
           <div
             onClick={() => set("alertsEnabled", !form.alertsEnabled)}
-            style={{ width: 44, height: 24, borderRadius: 12, background: form.alertsEnabled ? "#a3e635" : "#1e1e1e", position: "relative", cursor: "pointer", transition: "background 0.2s" }}
+            style={{
+              width: 44,
+              height: 24,
+              borderRadius: 12,
+              background: form.alertsEnabled ? "#FF2D78" : "rgba(255,255,255,0.06)",
+              border: form.alertsEnabled ? "1px solid #FF2D78" : "1px solid rgba(255,255,255,0.15)",
+              boxShadow: form.alertsEnabled ? "0 0 14px rgba(255,45,120,0.70)" : "none",
+              position: "relative",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
           >
             <div
-              style={{ position: "absolute", top: 3, left: form.alertsEnabled ? 23 : 3, width: 18, height: 18, borderRadius: "50%", background: form.alertsEnabled ? "#0a0a0a" : "#4b5563", transition: "left 0.2s" }}
+              style={{
+                position: "absolute",
+                top: 3,
+                left: form.alertsEnabled ? 22 : 3,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                background: form.alertsEnabled ? "#07070F" : "rgba(240,238,255,0.50)",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.40)",
+                transition: "left 0.2s",
+              }}
             />
           </div>
         </div>
@@ -229,21 +250,23 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       <button
         onClick={handleSave}
         style={{
-          background: saved ? "#1a2e0a" : "#a3e635",
-          border: "none",
-          borderRadius: 14,
+          background: saved ? "rgba(57,255,20,0.10)" : "rgba(255,0,110,0.15)",
+          border: saved ? "1px solid rgba(57,255,20,0.40)" : "1px solid #FF2D78",
+          borderRadius: 16,
           padding: "14px 24px",
           fontSize: 15,
           fontWeight: 700,
-          color: saved ? "#a3e635" : "#0a0a0a",
+          color: saved ? "#39FF14" : "#FF2D78",
           cursor: "pointer",
           transition: "all 0.2s",
+          boxShadow: saved ? "0 0 16px rgba(57,255,20,0.30)" : "0 0 20px rgba(255,45,120,0.35)",
+          textShadow: saved ? "0 0 10px rgba(57,255,20,0.70)" : "0 0 10px rgba(255,45,120,0.70)",
         }}
       >
         {saved ? "✓ Saved" : "Save Settings"}
       </button>
 
-      <p style={{ color: "#374151", fontSize: 11, textAlign: "center" }}>
+      <p style={{ color: "rgba(240,238,255,0.28)", fontSize: 11, textAlign: "center" }}>
         Settings stored locally in your browser. Octopus API key is on the server.
       </p>
     </div>

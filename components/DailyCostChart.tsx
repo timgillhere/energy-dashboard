@@ -31,12 +31,12 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
             {
               label: "Electricity (£)",
               data: days.map((d) => parseFloat(d.electricityCost.toFixed(2))),
-              borderColor: "#a3e635",
-              backgroundColor: "rgba(163,230,53,0.15)",
+              borderColor: "#00F0FF",
+              backgroundColor: "rgba(0,240,255,0.12)",
               fill: true,
               tension: 0.3,
               pointRadius: days.length > 30 ? 0 : 3,
-              pointBackgroundColor: "#a3e635",
+              pointBackgroundColor: "#00F0FF",
             },
           ]
         : mode === "gas"
@@ -44,20 +44,20 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
             {
               label: "Gas (£)",
               data: days.map((d) => parseFloat(d.gasCost.toFixed(2))),
-              borderColor: "#f97316",
-              backgroundColor: "rgba(249,115,22,0.15)",
+              borderColor: "#BF5FFF",
+              backgroundColor: "rgba(191,95,255,0.12)",
               fill: true,
               tension: 0.3,
               pointRadius: days.length > 30 ? 0 : 3,
-              pointBackgroundColor: "#f97316",
+              pointBackgroundColor: "#BF5FFF",
             },
           ]
         : [
             {
               label: "Electricity (£)",
               data: days.map((d) => parseFloat(d.electricityCost.toFixed(2))),
-              borderColor: "#a3e635",
-              backgroundColor: "rgba(163,230,53,0.6)",
+              borderColor: "#00F0FF",
+              backgroundColor: "rgba(0,240,255,0.40)",
               fill: true,
               tension: 0.3,
               pointRadius: 0,
@@ -66,8 +66,8 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
             {
               label: "Gas (£)",
               data: days.map((d) => parseFloat(d.gasCost.toFixed(2))),
-              borderColor: "#f97316",
-              backgroundColor: "rgba(249,115,22,0.6)",
+              borderColor: "#BF5FFF",
+              backgroundColor: "rgba(191,95,255,0.40)",
               fill: true,
               tension: 0.3,
               pointRadius: 0,
@@ -85,7 +85,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "#6b7280", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -132,20 +132,21 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
   }, [days, mode]);
 
   const btnStyle = (active: boolean): React.CSSProperties => ({
-    background: active ? "#1e1e1e" : "transparent",
-    border: `1px solid ${active ? "#2a2a2a" : "transparent"}`,
+    background: active ? "rgba(255,0,110,0.12)" : "transparent",
+    border: `1px solid ${active ? "rgba(255,0,110,0.45)" : "transparent"}`,
     borderRadius: 8,
     padding: "4px 10px",
     fontSize: 11,
-    color: active ? "#ededed" : "#4b5563",
+    color: active ? "#FF2D78" : "rgba(240,238,255,0.38)",
     cursor: "pointer",
+    boxShadow: active ? "0 0 8px rgba(255,45,120,0.20)" : "none",
   });
 
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Daily Cost
           </p>
           <InfoTip
@@ -161,7 +162,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
       </div>
 
       {days.length === 0 ? (
-        <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>
+        <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
           No data for {periodLabel} — add your meter serial numbers in Settings.
         </div>
       ) : (
@@ -171,7 +172,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
       )}
 
       {days.some((d) => d.estimated) && (
-        <p style={{ color: "#374151", fontSize: 11, marginTop: 8 }}>
+        <p style={{ color: "rgba(240,238,255,0.32)", fontSize: 11, marginTop: 8 }}>
           * Some days use estimated rates (outside 14-day rate history). Costs are approximate.
         </p>
       )}

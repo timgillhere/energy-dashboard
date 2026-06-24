@@ -35,16 +35,17 @@ export function Tooltip({ content, children, side = "top", width = 180 }: Toolti
             position: "absolute",
             ...positionStyle,
             width,
-            background: "#1e1e1e",
-            border: "1px solid #2a2a2a",
-            borderRadius: 8,
+            background: "#0A0A18",
+            border: "1px solid rgba(255,0,110,0.55)",
+            borderRadius: 12,
             padding: "7px 10px",
             fontSize: 12,
             lineHeight: 1.4,
-            color: "#d1d5db",
+            color: "rgba(240,238,255,0.80)",
             zIndex: 200,
             pointerEvents: "none",
             whiteSpace: "normal",
+            boxShadow: "0 0 20px rgba(255,0,110,0.20), 0 4px 16px rgba(0,0,0,0.80)",
           }}
         >
           {content}
@@ -54,11 +55,10 @@ export function Tooltip({ content, children, side = "top", width = 180 }: Toolti
   );
 }
 
-// Convenience: an info icon with tooltip
 export function InfoTip({ content, width }: { content: string; width?: number }) {
   return (
     <Tooltip content={content} width={width}>
-      <Info size={13} color="#374151" style={{ cursor: "default", flexShrink: 0 }} />
+      <Info size={13} color="rgba(240,238,255,0.30)" style={{ cursor: "default", flexShrink: 0 }} />
     </Tooltip>
   );
 }

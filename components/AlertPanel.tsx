@@ -36,7 +36,7 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
     if (permission !== "granted") return;
     const rate = currentRate ?? settings.alertThreshold;
     new Notification("Energy Alert — Test", {
-      body: `Good time to run appliances or charge the van — rate is ${rate.toFixed(2)}p/kWh`,
+      body: `Good time to run appliances — rate is ${rate.toFixed(2)}p/kWh`,
       icon: "/icons/icon-192.png",
     });
     setTestSent(true);
@@ -46,7 +46,7 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           Rate Alerts
         </p>
         <div
@@ -55,22 +55,25 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
             width: 44,
             height: 24,
             borderRadius: 12,
-            background: settings.alertsEnabled ? "#a3e635" : "#1e1e1e",
+            background: settings.alertsEnabled ? "#FF2D78" : "rgba(255,255,255,0.06)",
+            border: settings.alertsEnabled ? "1px solid #FF2D78" : "1px solid rgba(255,255,255,0.15)",
+            boxShadow: settings.alertsEnabled ? "0 0 14px rgba(255,45,120,0.70)" : "none",
             position: "relative",
             cursor: "pointer",
-            transition: "background 0.2s",
+            transition: "all 0.2s",
           }}
         >
           <div
             style={{
               position: "absolute",
               top: 3,
-              left: settings.alertsEnabled ? 23 : 3,
-              width: 18,
-              height: 18,
+              left: settings.alertsEnabled ? 22 : 3,
+              width: 16,
+              height: 16,
               borderRadius: "50%",
-              background: settings.alertsEnabled ? "#0a0a0a" : "#4b5563",
+              background: settings.alertsEnabled ? "#07070F" : "rgba(240,238,255,0.50)",
               transition: "left 0.2s",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.40)",
             }}
           />
         </div>
@@ -78,11 +81,11 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         {settings.alertsEnabled ? (
-          <Bell size={16} color="#a3e635" />
+          <Bell size={16} color="#FF2D78" style={{ filter: "drop-shadow(0 0 6px rgba(255,45,120,0.80))" }} />
         ) : (
-          <BellOff size={16} color="#4b5563" />
+          <BellOff size={16} color="rgba(240,238,255,0.30)" />
         )}
-        <span style={{ color: "#9ca3af", fontSize: 13 }}>
+        <span style={{ color: "rgba(240,238,255,0.60)", fontSize: 13 }}>
           {settings.alertsEnabled
             ? `Notify when rate ≤ ${settings.alertThreshold}p/kWh`
             : "Alerts disabled"}
@@ -90,13 +93,13 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
       </div>
 
       {!pushSupported && (
-        <p style={{ color: "#6b7280", fontSize: 12, marginBottom: 8 }}>
+        <p style={{ color: "rgba(240,238,255,0.32)", fontSize: 12, marginBottom: 8 }}>
           Push notifications not supported in this browser.
         </p>
       )}
 
       {permission === "denied" && (
-        <p style={{ color: "#ef4444", fontSize: 12, marginBottom: 8 }}>
+        <p style={{ color: "#FF2D78", fontSize: 12, marginBottom: 8 }}>
           Notifications blocked — enable in browser settings.
         </p>
       )}
@@ -105,14 +108,15 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
         <button
           onClick={sendTestNotification}
           style={{
-            background: "#1e1e1e",
-            border: "1px solid #2a2a2a",
-            borderRadius: 10,
+            background: "rgba(255,0,110,0.08)",
+            border: "1px solid rgba(255,0,110,0.35)",
+            borderRadius: 12,
             padding: "8px 14px",
-            color: testSent ? "#a3e635" : "#9ca3af",
+            color: testSent ? "#39FF14" : "rgba(240,238,255,0.60)",
             fontSize: 12,
             cursor: "pointer",
             width: "100%",
+            textShadow: testSent ? "0 0 10px rgba(57,255,20,0.60)" : "none",
           }}
         >
           {testSent ? "✓ Test sent!" : "Send test notification"}

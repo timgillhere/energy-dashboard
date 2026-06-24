@@ -7,25 +7,25 @@ export function getRateStatus(rate: number, threshold: number): RateStatus {
 }
 
 export const STATUS_COLORS: Record<RateStatus, string> = {
-  cheap: "#a3e635",
-  borderline: "#f97316",
-  expensive: "#ef4444",
+  cheap: "#39FF14",
+  borderline: "#FFE500",
+  expensive: "#FF2D78",
 };
 
 export const STATUS_BG: Record<RateStatus, string> = {
-  cheap: "rgba(163,230,53,0.1)",
-  borderline: "rgba(249,115,22,0.1)",
-  expensive: "rgba(239,68,68,0.1)",
+  cheap: "rgba(57,255,20,0.10)",
+  borderline: "rgba(255,229,0,0.10)",
+  expensive: "rgba(255,45,120,0.10)",
 };
 
 export const STATUS_LABELS: Record<RateStatus, string> = {
   cheap: "Good time to run appliances",
   borderline: "Borderline — consider waiting",
-  expensive: "Expensive right now — delay if you can",
+  expensive: "Rates are elevated right now",
 };
 
 export const STATUS_ICONS: Record<RateStatus, string> = {
-  cheap: "✅",
-  borderline: "⚠️",
-  expensive: "❌",
+  cheap: "✓",
+  borderline: "~",
+  expensive: "↑",
 };

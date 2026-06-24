@@ -5,7 +5,7 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
-import { SLOT_LABELS, buildHalfHourlySlots, getRateForTime } from "@/lib/dataUtils";
+import { SLOT_LABELS, buildHalfHourlySlots } from "@/lib/dataUtils";
 import type { ConsumptionInterval, Rate } from "@/lib/types";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
@@ -45,16 +45,14 @@ export default function HalfHourlyChart({
       return;
     }
 
-    // Find current slot if today
     const now = new Date();
     const currentSlot = isToday ? Math.floor(now.getHours() * 2 + now.getMinutes() / 30) : -1;
 
-    // Background colors: highlight current slot
     const elecColors = elecSlots.map((_, i) =>
-      i === currentSlot ? "rgba(163,230,53,1)" : "rgba(163,230,53,0.55)"
+      i === currentSlot ? "rgba(0,240,255,1)" : "rgba(0,240,255,0.50)"
     );
     const gasColors = gasSlots.map((_, i) =>
-      i === currentSlot ? "rgba(249,115,22,1)" : "rgba(249,115,22,0.55)"
+      i === currentSlot ? "rgba(191,95,255,1)" : "rgba(191,95,255,0.50)"
     );
 
     chartRef.current?.destroy();
@@ -87,7 +85,7 @@ export default function HalfHourlyChart({
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "#6b7280", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -139,7 +137,7 @@ export default function HalfHourlyChart({
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <p style={{ color: "#6b7280", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Half-hourly Usage
           </p>
           <InfoTip
@@ -148,16 +146,16 @@ export default function HalfHourlyChart({
           />
         </div>
         {hasData && (
-          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6b7280" }}>
+          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "rgba(240,238,255,0.45)" }}>
             <span>
-              <span style={{ color: "#a3e635", fontWeight: 700 }}>{totalElec.toFixed(2)}</span> kWh elec
+              <span style={{ color: "#00F0FF", fontWeight: 700, textShadow: "0 0 8px rgba(0,240,255,0.50)" }}>{totalElec.toFixed(2)}</span> kWh elec
             </span>
             <span>
-              <span style={{ color: "#f97316", fontWeight: 700 }}>{totalGas.toFixed(2)}</span> kWh gas
+              <span style={{ color: "#BF5FFF", fontWeight: 700, textShadow: "0 0 8px rgba(191,95,255,0.50)" }}>{totalGas.toFixed(2)}</span> kWh gas
             </span>
             {rate > 0 && (
               <span>
-                <span style={{ color: "#ededed", fontWeight: 700 }}>£{elecCost.toFixed(2)}</span> elec cost
+                <span style={{ color: "#F0EEFF", fontWeight: 700 }}>£{elecCost.toFixed(2)}</span> elec cost
               </span>
             )}
           </div>
@@ -169,7 +167,7 @@ export default function HalfHourlyChart({
           <canvas ref={canvasRef} />
         </div>
       ) : (
-        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "#374151", fontSize: 13 }}>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
           No consumption data for{" "}
           {selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "long" })} — data may not have arrived yet.
         </div>
