@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
                 properties {
                   electricityMeterPoints {
                     mpan
+                    meters { serialNumber }
                     agreements {
                       validFrom
                       validTo
@@ -63,6 +64,7 @@ export async function GET(req: NextRequest) {
                   }
                   gasMeterPoints {
                     mprn
+                    meters { serialNumber }
                     agreements {
                       validFrom
                       validTo
@@ -98,8 +100,10 @@ export async function GET(req: NextRequest) {
     const productCode = electricityTariffCode ? productCodeFromTariff(electricityTariffCode) : null;
     const mpan = elecPoint?.mpan ?? null;
     const mprn = gasPoint?.mprn ?? null;
+    const electricitySerial = elecPoint?.meters?.[0]?.serialNumber ?? null;
+    const gasSerial = gasPoint?.meters?.[0]?.serialNumber ?? null;
 
-    return NextResponse.json({ electricityTariffCode, gasTariffCode, productCode, mpan, mprn });
+    return NextResponse.json({ electricityTariffCode, gasTariffCode, productCode, mpan, mprn, electricitySerial, gasSerial });
   } catch (err) {
     return NextResponse.json({ error: "Failed to query Octopus account" }, { status: 500 });
   }

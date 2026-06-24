@@ -86,14 +86,16 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         setDetectMsg({ ok: false, text: data.error ?? "Auto-detect failed — check MPAN/MPRN and API key." });
         return;
       }
-      const { electricityTariffCode, gasTariffCode, productCode, mpan, mprn } = data;
+      const { electricityTariffCode, gasTariffCode, productCode, mpan, mprn, electricitySerial, gasSerial } = data;
       setForm((prev) => ({
         ...prev,
         ...(productCode ? { productCode } : {}),
         ...(electricityTariffCode ? { tariffCode: electricityTariffCode } : {}),
         ...(gasTariffCode ? { gasTariffCode } : {}),
-        ...(mpan && !prev.mpan ? { mpan } : {}),
-        ...(mprn && !prev.mprn ? { mprn } : {}),
+        ...(mpan ? { mpan } : {}),
+        ...(mprn ? { mprn } : {}),
+        ...(electricitySerial ? { electricitySerial } : {}),
+        ...(gasSerial ? { gasSerial } : {}),
       }));
       setDetectMsg({
         ok: true,

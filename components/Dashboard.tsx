@@ -1,16 +1,41 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Nav from "./Nav";
 import RateHero from "./RateHero";
 import SpendToday from "./SpendToday";
-import WeeklyChart from "./WeeklyChart";
 import AlertPanel from "./AlertPanel";
 import SettingsPanel from "./SettingsPanel";
+import RateForecast from "./RateForecast";
+import StatsRow from "./StatsRow";
+import HalfHourlyChart from "./HalfHourlyChart";
+import DailyCostChart from "./DailyCostChart";
+import UsagePatterns from "./UsagePatterns";
+import RangeFilter, { type Preset } from "./RangeFilter";
 import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
 import { loadSettings, saveSettings } from "@/lib/settings";
+import { computeDailyCosts, avgRate } from "@/lib/dataUtils";
 
 type View = "dashboard" | "history" | "settings";
+
+function presetToDateRange(preset: Preset, selectedDate: Date): { from: Date; to: Date } {
+  const to = new Date();
+  const from = new Date();
+  if (preset === "1D") {
+    return { from: selectedDate, to: selectedDate };
+  }
+  const days = preset === "7D" ? 7 : preset === "30D" ? 30 : 90;
+  from.setDate(from.getDate() - days + 1);
+  return { from, to };
+}
+
+function periodLabel(preset: Preset, selectedDate: Date): string {
+  if (preset === "1D") {
+    const isToday = selectedDate.toDateString() === new Date().toDateString();
+    return isToday ? "today" : selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+  return `last ${preset === "7D" ? "7" : preset === "30D" ? "30" : "90"} days`;
+}
 
 function getDateRange(daysBack: number) {
   const to = new Date();
@@ -21,41 +46,71 @@ function getDateRange(daysBack: number) {
 
 function findCurrentSlot(results: Rate[]): Rate | null {
   const now = new Date();
-  return (
-    results.find((r) => {
-      const from = new Date(r.valid_from);
-      const to = r.valid_to ? new Date(r.valid_to) : null;
-      return from <= now && (to === null || to > now);
-    }) ?? null
-  );
+  return results.find((r) => {
+    const from = new Date(r.valid_from);
+    const to = r.valid_to ? new Date(r.valid_to) : null;
+    return from <= now && (to === null || to > now);
+  }) ?? null;
 }
 
-function findTomorrowSlots(results: Rate[], currentSlot: Rate | null): Rate[] {
+function findNextSlot(results: Rate[]): Rate | null {
   const now = new Date();
-  // All slots whose valid_from is in the future (after now)
-  // For Tracker this is the one daily slot starting tonight at 23:00 UTC
-  // For Agile this is all 48 half-hour slots for tomorrow
-  return results
-    .filter((r) => new Date(r.valid_from) > now)
-    .sort((a, b) => new Date(a.valid_from).getTime() - new Date(b.valid_from).getTime());
+  return (
+    results
+      .filter((r) => new Date(r.valid_from) > now)
+      .sort((a, b) => new Date(a.valid_from).getTime() - new Date(b.valid_from).getTime())[0] ?? null
+  );
 }
 
 export default function Dashboard() {
   const [view, setView] = useState<View>("dashboard");
   const [settings, setSettings] = useState<Settings>(loadSettings);
 
+  // Date/range state
+  const [preset, setPreset] = useState<Preset>("1D");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Rates
   const [elecRate, setElecRate] = useState<Rate | null>(null);
   const [gasRate, setGasRate] = useState<Rate | null>(null);
-  const [tomorrowRate, setTomorrowRate] = useState<Rate | null>(null);
-  const [tomorrowRates, setTomorrowRates] = useState<Rate[]>([]);
+  const [tomorrowElec, setTomorrowElec] = useState<Rate | null>(null);
+  const [tomorrowGas, setTomorrowGas] = useState<Rate | null>(null);
+  const [allElecRates, setAllElecRates] = useState<Rate[]>([]);
+  const [allGasRates, setAllGasRates] = useState<Rate[]>([]);
   const [ratesLoading, setRatesLoading] = useState(false);
   const [ratesError, setRatesError] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
+  const [cloudLoaded, setCloudLoaded] = useState(false);
 
+  // Consumption
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
 
-  // Alert on cheap rate
+  // Computed daily costs for the selected range
+  const dateRange = useMemo(() => presetToDateRange(preset, selectedDate), [preset, selectedDate]);
+  const label = useMemo(() => periodLabel(preset, selectedDate), [preset, selectedDate]);
+
+  const fallbackElecRate = useMemo(() => avgRate(allElecRates), [allElecRates]);
+  const fallbackGasRate = useMemo(() => avgRate(allGasRates), [allGasRates]);
+
+  const dailyCosts = useMemo(
+    () =>
+      computeDailyCosts(
+        electricityData,
+        gasData,
+        allElecRates,
+        allGasRates,
+        settings.electricityStandingCharge,
+        settings.gasStandingCharge,
+        fallbackElecRate || settings.alertThreshold,
+        fallbackGasRate || settings.gasUnitRate,
+        dateRange.from,
+        dateRange.to
+      ),
+    [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate, dateRange]
+  );
+
+  // Alerts
   useEffect(() => {
     if (!settings.alertsEnabled || !elecRate) return;
     if ("Notification" in window && Notification.permission === "granted") {
@@ -70,62 +125,53 @@ export default function Dashboard() {
   }, [elecRate, settings.alertsEnabled, settings.alertThreshold]);
 
   useEffect(() => {
-    if (!settings.alertsEnabled || !tomorrowRate) return;
+    if (!settings.alertsEnabled || !tomorrowElec) return;
     if ("Notification" in window && Notification.permission === "granted") {
-      const rate = tomorrowRate.value_inc_vat;
+      const rate = tomorrowElec.value_inc_vat;
       if (rate <= settings.alertThreshold) {
         new Notification("Energy Alert — Cheap Tomorrow", {
-          body: `Tomorrow's cheapest rate is ${rate.toFixed(2)}p/kWh — good time to plan charging the van`,
+          body: `Tomorrow's rate is ${rate.toFixed(2)}p/kWh — good time to plan charging`,
           icon: "/icons/icon-192.png",
         });
       }
     }
-  }, [tomorrowRate, settings.alertsEnabled, settings.alertThreshold]);
+  }, [tomorrowElec, settings.alertsEnabled, settings.alertThreshold]);
 
   const fetchRates = useCallback(async () => {
     if (!settings.productCode || !settings.tariffCode) {
-      setRatesError("Tariff not configured — use Auto-detect in Settings or enter codes manually.");
+      setRatesError("Tariff not configured — use Auto-detect in Settings.");
       return;
     }
     setRatesLoading(true);
     setRatesError(null);
-
     try {
-      // Electricity rate
-      const elecRes = await fetch(
-        `/api/rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.tariffCode)}`
-      );
+      const [elecRes, gasRes] = await Promise.all([
+        fetch(`/api/rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.tariffCode)}&days_back=90`),
+        settings.gasTariffCode
+          ? fetch(`/api/gas-rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.gasTariffCode)}&days_back=90`)
+          : Promise.resolve(null),
+      ]);
+
       const elecData = await elecRes.json();
       if (!elecRes.ok || elecData.error) {
-        setRatesError(elecData.error ?? `API error ${elecRes.status} — check tariff codes in Settings`);
+        setRatesError(elecData.error ?? `API error ${elecRes.status}`);
         return;
       }
       const elecResults: Rate[] = elecData.results ?? [];
-      const currentSlot = findCurrentSlot(elecResults);
-      setElecRate(currentSlot);
-      const tmrSlots = findTomorrowSlots(elecResults, currentSlot);
-      setTomorrowRates(tmrSlots);
-      setTomorrowRate(
-        tmrSlots.length
-          ? tmrSlots.reduce((min, r) => (r.value_inc_vat < min.value_inc_vat ? r : min))
-          : null
-      );
+      setAllElecRates(elecResults);
+      setElecRate(findCurrentSlot(elecResults));
+      setTomorrowElec(findNextSlot(elecResults));
 
-      // Gas rate (Tracker has a separate gas-tariffs endpoint)
-      if (settings.gasTariffCode) {
-        const gasRes = await fetch(
-          `/api/gas-rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.gasTariffCode)}`
-        );
-        if (gasRes.ok) {
-          const gasData = await gasRes.json();
-          const gasResults: Rate[] = gasData.results ?? [];
-          setGasRate(findCurrentSlot(gasResults));
-        }
+      if (gasRes?.ok) {
+        const gasData = await gasRes.json();
+        const gasResults: Rate[] = gasData.results ?? [];
+        setAllGasRates(gasResults);
+        setGasRate(findCurrentSlot(gasResults));
+        setTomorrowGas(findNextSlot(gasResults));
       }
-
       setLastFetch(new Date());
-    } catch (e) {
-      setRatesError("Network error fetching rates — check your connection.");
+    } catch {
+      setRatesError("Network error fetching rates.");
     } finally {
       setRatesLoading(false);
     }
@@ -136,7 +182,7 @@ export default function Dashboard() {
     if (settings.mpan && settings.electricitySerial) {
       try {
         const res = await fetch(
-          `/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}&page_size=2000`
+          `/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}&page_size=10000`
         );
         const data = await res.json();
         setElectricityData(data.results ?? []);
@@ -145,7 +191,7 @@ export default function Dashboard() {
     if (settings.mprn && settings.gasSerial) {
       try {
         const res = await fetch(
-          `/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}&page_size=2000`
+          `/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}&page_size=10000`
         );
         const data = await res.json();
         setGasData(data.results ?? []);
@@ -153,56 +199,126 @@ export default function Dashboard() {
     }
   }, [settings.mpan, settings.electricitySerial, settings.mprn, settings.gasSerial]);
 
-  useEffect(() => {
-    fetchRates();
-    fetchConsumption();
-  }, [fetchRates, fetchConsumption]);
-
-  // Auto-refresh rates every 30 min
+  useEffect(() => { fetchRates(); fetchConsumption(); }, [fetchRates, fetchConsumption]);
   useEffect(() => {
     const id = setInterval(fetchRates, 30 * 60 * 1000);
     return () => clearInterval(id);
   }, [fetchRates]);
+  useEffect(() => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
 
   useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
-    }
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((cloud: Partial<Settings>) => {
+        if (cloud && Object.keys(cloud).length > 0) {
+          const merged: Settings = { ...loadSettings(), ...cloud };
+          setSettings(merged);
+          saveSettings(merged);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setCloudLoaded(true));
   }, []);
+
+  useEffect(() => {
+    if (!cloudLoaded || settings.productCode) return;
+    fetch("/api/tariff")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.productCode) return;
+        setSettings((prev) => {
+          if (prev.productCode) return prev;
+          const updated: Settings = {
+            ...prev,
+            productCode: data.productCode,
+            tariffCode: data.electricityTariffCode ?? prev.tariffCode,
+            gasTariffCode: data.gasTariffCode ?? prev.gasTariffCode,
+            mpan: data.mpan ?? prev.mpan,
+            mprn: data.mprn ?? prev.mprn,
+            electricitySerial: data.electricitySerial ?? prev.electricitySerial,
+            gasSerial: data.gasSerial ?? prev.gasSerial,
+          };
+          saveSettings(updated);
+          fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updated),
+          }).catch(() => {});
+          return updated;
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cloudLoaded]);
+
+  function persistSettings(updated: Settings) {
+    saveSettings(updated);
+    fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    }).catch(() => {});
+  }
 
   function handleSaveSettings(updated: Settings) {
     setSettings(updated);
-    // Clear rates so they re-fetch with new tariff codes
-    setElecRate(null);
-    setGasRate(null);
+    setElecRate(null); setGasRate(null);
     setRatesError(null);
+    setAllElecRates([]); setAllGasRates([]);
+    persistSettings(updated);
   }
 
   const gasRateValue = gasRate?.value_inc_vat ?? settings.gasUnitRate;
+
+  const sectionLabel: React.CSSProperties = {
+    color: "#374151",
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    marginBottom: 10,
+    marginTop: 6,
+  };
 
   return (
     <div style={{ display: "flex", minHeight: "100dvh", background: "#0a0a0a" }}>
       <Nav view={view} onNavigate={setView} />
 
-      <main style={{ marginLeft: 64, flex: 1, padding: "28px 28px 40px", maxWidth: 900 }}>
-        <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, color: "#ededed", letterSpacing: "-0.02em", textTransform: "uppercase" }}>
-            {view === "dashboard" ? "Dashboard" : view === "history" ? "History" : "Settings"}
-          </h1>
-          {view === "dashboard" && (
-            <p style={{ color: "#4b5563", fontSize: 13, marginTop: 4 }}>
+      <main style={{ marginLeft: 64, flex: 1, padding: "28px 28px 60px", maxWidth: 1040 }}>
+
+        {/* Page header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 20, fontWeight: 800, color: "#ededed", letterSpacing: "-0.02em", textTransform: "uppercase" }}>
+              {view === "dashboard" ? "Dashboard" : view === "history" ? "History" : "Settings"}
+            </h1>
+            <p style={{ color: "#374151", fontSize: 13, marginTop: 3 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
             </p>
+          </div>
+
+          {view !== "settings" && (
+            <RangeFilter
+              preset={preset}
+              selectedDate={selectedDate}
+              onPreset={setPreset}
+              onDayChange={setSelectedDate}
+            />
           )}
         </div>
 
+        {/* ── DASHBOARD ── */}
         {view === "dashboard" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+            {/* Rate hero */}
             <RateHero
               elecRate={elecRate}
               gasRate={gasRate}
-              tomorrowRate={tomorrowRate}
-              tomorrowRates={tomorrowRates}
+              tomorrowElec={tomorrowElec}
+              tomorrowGas={tomorrowGas}
               settings={settings}
               lastFetch={lastFetch}
               loading={ratesLoading}
@@ -211,7 +327,16 @@ export default function Dashboard() {
               onGoToSettings={() => setView("settings")}
             />
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            {/* Stats strip */}
+            <div>
+              <p style={sectionLabel}>
+                {preset === "1D" ? "Today" : label} at a glance
+              </p>
+              <StatsRow days={dailyCosts} periodLabel={label} />
+            </div>
+
+            {/* Today's spend + alerts */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <SpendToday
                 electricityData={electricityData}
                 gasData={gasData}
@@ -224,38 +349,92 @@ export default function Dashboard() {
                 onToggle={(enabled) => {
                   const updated = { ...settings, alertsEnabled: enabled };
                   setSettings(updated);
-                  saveSettings(updated);
+                  persistSettings(updated);
                 }}
                 currentRate={elecRate?.value_inc_vat ?? null}
               />
             </div>
 
-            {!settings.mpan && !settings.mprn && (
-              <div style={{ background: "#141414", border: "1px dashed #2a2a2a", borderRadius: 20, padding: 24, textAlign: "center", color: "#4b5563" }}>
-                <p style={{ marginBottom: 8 }}>Add your MPAN and MPRN in Settings to see consumption data.</p>
-                <button
-                  onClick={() => setView("settings")}
-                  style={{ background: "#1e1e1e", border: "1px solid #2a2a2a", borderRadius: 10, padding: "8px 16px", color: "#a3e635", fontSize: 13, cursor: "pointer" }}
-                >
-                  Go to Settings →
-                </button>
+            {/* Half-hourly usage */}
+            <div>
+              <p style={sectionLabel}>Half-hourly consumption — {
+                preset === "1D" && selectedDate.toDateString() === new Date().toDateString()
+                  ? "today"
+                  : selectedDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })
+              }</p>
+              <HalfHourlyChart
+                electricityData={electricityData}
+                gasData={gasData}
+                elecRates={allElecRates}
+                gasRates={allGasRates}
+                selectedDate={selectedDate}
+                todayRate={elecRate?.value_inc_vat ?? null}
+              />
+            </div>
+
+            {/* Daily cost trend (shown when range > 1 day) */}
+            {preset !== "1D" && (
+              <div>
+                <p style={sectionLabel}>Daily cost — {label}</p>
+                <DailyCostChart days={dailyCosts} periodLabel={label} />
               </div>
             )}
+
+            {/* Rate history table */}
+            <div>
+              <p style={sectionLabel}>Tracker rates</p>
+              <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
+            </div>
+
           </div>
         )}
 
+        {/* ── HISTORY ── */}
         {view === "history" && (
-          <WeeklyChart
-            electricityData={electricityData}
-            gasData={gasData}
-            settings={settings}
-            todayRate={elecRate?.value_inc_vat ?? null}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+            <div>
+              <p style={sectionLabel}>{label} at a glance</p>
+              <StatsRow days={dailyCosts} periodLabel={label} />
+            </div>
+
+            <div>
+              <p style={sectionLabel}>Daily spend — {label}</p>
+              <DailyCostChart days={dailyCosts} periodLabel={label} />
+            </div>
+
+            <div>
+              <p style={sectionLabel}>Half-hourly breakdown — {
+                selectedDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })
+              }</p>
+              <HalfHourlyChart
+                electricityData={electricityData}
+                gasData={gasData}
+                elecRates={allElecRates}
+                gasRates={allGasRates}
+                selectedDate={selectedDate}
+                todayRate={elecRate?.value_inc_vat ?? null}
+              />
+            </div>
+
+            <div>
+              <p style={sectionLabel}>Usage patterns by time of day</p>
+              <UsagePatterns electricityData={electricityData} gasData={gasData} />
+            </div>
+
+            <div>
+              <p style={sectionLabel}>Tracker rate history</p>
+              <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
+            </div>
+
+          </div>
         )}
 
+        {/* ── SETTINGS ── */}
         {view === "settings" && (
           <SettingsPanel settings={settings} onSave={handleSaveSettings} />
         )}
+
       </main>
     </div>
   );

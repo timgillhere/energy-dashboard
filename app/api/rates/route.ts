@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const productCode = searchParams.get("product_code");
   const tariffCode = searchParams.get("tariff_code");
+  const daysBack = parseInt(searchParams.get("days_back") ?? "14", 10);
 
   if (!productCode || !tariffCode) {
     return NextResponse.json({ error: "Missing product_code or tariff_code" }, { status: 400 });
@@ -17,21 +18,20 @@ export async function GET(req: NextRequest) {
     : {};
 
   const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const dayAfterTomorrow = new Date(todayStart);
-  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-
-  const url = `${OCTOPUS_BASE}/products/${productCode}/electricity-tariffs/${tariffCode}/standard-unit-rates/?period_from=${todayStart.toISOString()}&period_to=${dayAfterTomorrow.toISOString()}`;
+  const from = new Date(now);
+  from.setDate(from.getDate() - daysBack);
+  // No period_to — fetches today + any published future rates
+  const url = `${OCTOPUS_BASE}/products/${productCode}/electricity-tariffs/${tariffCode}/standard-unit-rates/?period_from=${from.toISOString()}&page_size=100`;
 
   try {
     const res = await fetch(url, { headers, next: { revalidate: 300 } });
     if (!res.ok) {
-      return NextResponse.json({ error: `Octopus API error: ${res.status}` }, { status: res.status });
+      const body = await res.text();
+      return NextResponse.json({ error: `Octopus API error ${res.status}: ${body}` }, { status: res.status });
     }
     const data = await res.json();
     return NextResponse.json(data);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch rates" }, { status: 500 });
   }
 }
