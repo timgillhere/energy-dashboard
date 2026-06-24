@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { LayoutDashboard, History, Settings } from "lucide-react";
+import { LayoutDashboard, Settings } from "lucide-react";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
-type View = "dashboard" | "history" | "settings";
+type View = "dashboard" | "settings";
 
 interface NavProps {
   view: View;
@@ -15,13 +16,7 @@ const NAV_ITEMS: { id: View; icon: React.ReactNode; label: string; description: 
     id: "dashboard",
     icon: <LayoutDashboard size={20} />,
     label: "Dashboard",
-    description: "Current rates, today's spend, and live consumption",
-  },
-  {
-    id: "history",
-    icon: <History size={20} />,
-    label: "History",
-    description: "Weekly spend trends and historical usage charts",
+    description: "Rates, spend, consumption, and usage charts",
   },
   {
     id: "settings",
@@ -41,7 +36,7 @@ function ElectricHouseIcon() {
   );
 }
 
-function NavButton({
+function SidebarButton({
   item,
   active,
   onClick,
@@ -62,23 +57,13 @@ function NavButton({
           width: 42,
           height: 42,
           borderRadius: 14,
-          border: active
-            ? "1px solid rgba(255,0,110,0.70)"
-            : "1px solid transparent",
+          border: active ? "1px solid rgba(255,0,110,0.70)" : "1px solid transparent",
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: active
-            ? "rgba(255,0,110,0.15)"
-            : hovered
-            ? "rgba(255,0,110,0.08)"
-            : "transparent",
-          color: active
-            ? "#FF2D78"
-            : hovered
-            ? "rgba(255,45,120,0.70)"
-            : "rgba(240,238,255,0.35)",
+          background: active ? "rgba(255,0,110,0.15)" : hovered ? "rgba(255,0,110,0.08)" : "transparent",
+          color: active ? "#FF2D78" : hovered ? "rgba(255,45,120,0.70)" : "rgba(240,238,255,0.55)",
           boxShadow: active ? "0 0 14px rgba(255,0,110,0.25)" : "none",
           transition: "all 0.15s",
         }}
@@ -103,12 +88,8 @@ function NavButton({
             boxShadow: "0 0 20px rgba(255,0,110,0.20), 0 4px 16px rgba(0,0,0,0.80)",
           }}
         >
-          <p style={{ color: "#F0EEFF", fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
-            {item.label}
-          </p>
-          <p style={{ color: "rgba(240,238,255,0.50)", fontSize: 11, maxWidth: 200, whiteSpace: "normal" }}>
-            {item.description}
-          </p>
+          <p style={{ color: "#F0EEFF", fontSize: 13, fontWeight: 600, marginBottom: 2 }}>{item.label}</p>
+          <p style={{ color: "rgba(240,238,255,0.65)", fontSize: 11, maxWidth: 200, whiteSpace: "normal" }}>{item.description}</p>
           <div
             style={{
               position: "absolute",
@@ -129,6 +110,58 @@ function NavButton({
 }
 
 export default function Nav({ view, onNavigate }: NavProps) {
+  const { isMobile } = useBreakpoint();
+
+  if (isMobile) {
+    return (
+      <nav
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 62,
+          background: "#050508",
+          borderTop: "1px solid rgba(255,0,110,0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-around",
+          zIndex: 50,
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
+        {NAV_ITEMS.map((item) => {
+          const active = view === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              style={{
+                flex: 1,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 4,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: active ? "#FF2D78" : "rgba(240,238,255,0.45)",
+                transition: "color 0.15s",
+              }}
+            >
+              <span style={{ filter: active ? "drop-shadow(0 0 6px rgba(255,45,120,0.70))" : "none" }}>
+                {item.icon}
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em" }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
+
   return (
     <nav
       style={{
@@ -170,7 +203,7 @@ export default function Nav({ view, onNavigate }: NavProps) {
       </div>
 
       {NAV_ITEMS.map((item) => (
-        <NavButton
+        <SidebarButton
           key={item.id}
           item={item}
           active={view === item.id}

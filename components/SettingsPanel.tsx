@@ -28,7 +28,7 @@ function Field({
 }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <label style={{ display: "block", color: "rgba(240,238,255,0.45)", fontSize: 12, marginBottom: 4 }}>
+      <label style={{ display: "block", color: "rgba(240,238,255,0.65)", fontSize: 12, marginBottom: 4 }}>
         {label}
       </label>
       <input
@@ -47,7 +47,7 @@ function Field({
           outline: "none",
         }}
       />
-      {hint && <p style={{ color: "rgba(240,238,255,0.30)", fontSize: 11, marginTop: 4 }}>{hint}</p>}
+      {hint && <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 4 }}>{hint}</p>}
     </div>
   );
 }
@@ -111,7 +111,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <Card>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Electricity Meter
         </p>
         <Field label="MPAN" value={form.mpan} onChange={(v) => set("mpan", v)} placeholder="1200000000000" />
@@ -120,7 +120,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       </Card>
 
       <Card>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Gas Meter
         </p>
         <Field label="MPRN" value={form.mprn} onChange={(v) => set("mprn", v)} placeholder="1234567890" />
@@ -137,7 +137,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
 
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Tracker Tariff
           </p>
           <button
@@ -203,7 +203,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
       </Card>
 
       <Card>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Alert Settings
         </p>
         <Field
@@ -215,7 +215,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
           placeholder="25"
         />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "rgba(240,238,255,0.55)", fontSize: 13 }}>Rate alerts enabled</span>
+          <span style={{ color: "rgba(240,238,255,0.72)", fontSize: 13 }}>Rate alerts enabled</span>
           <div
             onClick={() => set("alertsEnabled", !form.alertsEnabled)}
             style={{
@@ -266,7 +266,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         {saved ? "✓ Saved" : "Save Settings"}
       </button>
 
-      <p style={{ color: "rgba(240,238,255,0.28)", fontSize: 11, textAlign: "center" }}>
+      <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, textAlign: "center" }}>
         Settings stored locally in your browser. Octopus API key is on the server.
       </p>
     </div>

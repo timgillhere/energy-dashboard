@@ -3,6 +3,7 @@
 import { RefreshCw, Zap, Flame } from "lucide-react";
 import Card from "./Card";
 import type { ConsumptionInterval, Settings } from "@/lib/types";
+import { getIntervalsForUKDate, toUKDateKey } from "@/lib/dataUtils";
 
 interface SpendTodayProps {
   electricityData: ConsumptionInterval[];
@@ -16,10 +17,10 @@ interface SpendTodayProps {
 }
 
 function calcSpend(data: ConsumptionInterval[], unitRate: number, standingCharge: number, date: Date): { kwh: number; cost: number } {
-  const dateStr = date.toISOString().slice(0, 10);
-  const dayData = data.filter((d) => d.interval_start.startsWith(dateStr));
+  const ukKey = toUKDateKey(date);
+  const dayData = getIntervalsForUKDate(data, ukKey);
   const kwh = dayData.reduce((sum, d) => sum + d.consumption, 0);
-  const cost = (kwh * unitRate) / 100 + standingCharge / 100;
+  const cost = dayData.length > 0 ? (kwh * unitRate) / 100 + standingCharge / 100 : 0;
   return { kwh, cost };
 }
 
@@ -42,7 +43,7 @@ export default function SpendToday({ electricityData, gasData, todayRate, gasUni
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           {getSpendLabel(date)}
         </p>
         {onRefresh && (
@@ -72,35 +73,35 @@ export default function SpendToday({ electricityData, gasData, todayRate, gasUni
         <span style={{ fontSize: 48, fontWeight: 800, color: "#F0EEFF", letterSpacing: "-0.03em", textShadow: "0 0 20px rgba(240,238,255,0.25)" }}>
           £{total.toFixed(2)}
         </span>
-        <span style={{ color: "rgba(240,238,255,0.35)", fontSize: 14 }}>combined</span>
+        <span style={{ color: "rgba(240,238,255,0.55)", fontSize: 14 }}>combined</span>
       </div>
 
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1, background: "rgba(0,240,255,0.05)", borderRadius: 14, padding: 12, border: "1px solid rgba(0,240,255,0.25)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
             <Zap size={14} color="#00F0FF" />
-            <span style={{ color: "rgba(0,240,255,0.75)", fontSize: 12, fontWeight: 600 }}>Electricity</span>
+            <span style={{ color: "rgba(0,240,255,0.85)", fontSize: 12, fontWeight: 600 }}>Electricity</span>
           </div>
           <p style={{ fontSize: 22, fontWeight: 700, color: "#F0EEFF", marginBottom: 2 }}>
             £{elec.cost.toFixed(2)}
           </p>
-          <p style={{ fontSize: 11, color: "rgba(240,238,255,0.35)" }}>{elec.kwh.toFixed(2)} kWh</p>
+          <p style={{ fontSize: 11, color: "rgba(240,238,255,0.55)" }}>{elec.kwh.toFixed(2)} kWh</p>
         </div>
 
         <div style={{ flex: 1, background: "rgba(191,95,255,0.05)", borderRadius: 14, padding: 12, border: "1px solid rgba(191,95,255,0.25)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
             <Flame size={14} color="#BF5FFF" />
-            <span style={{ color: "rgba(191,95,255,0.85)", fontSize: 12, fontWeight: 600 }}>Gas</span>
+            <span style={{ color: "rgba(191,95,255,0.95)", fontSize: 12, fontWeight: 600 }}>Gas</span>
           </div>
           <p style={{ fontSize: 22, fontWeight: 700, color: "#F0EEFF", marginBottom: 2 }}>
             £{gas.cost.toFixed(2)}
           </p>
-          <p style={{ fontSize: 11, color: "rgba(240,238,255,0.35)" }}>{gas.kwh.toFixed(2)} kWh</p>
+          <p style={{ fontSize: 11, color: "rgba(240,238,255,0.55)" }}>{gas.kwh.toFixed(2)} kWh</p>
         </div>
       </div>
 
       {elecRate === 0 && (
-        <p style={{ color: "rgba(240,238,255,0.32)", fontSize: 11, marginTop: 10 }}>
+        <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 10 }}>
           Rate unavailable — configure tariff in settings
         </p>
       )}

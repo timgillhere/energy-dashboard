@@ -1,14 +1,17 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 
-export type Preset = "1D" | "7D" | "30D" | "90D";
+export type Preset = "1D" | "7D" | "30D" | "90D" | "custom";
 
 interface RangeFilterProps {
   preset: Preset;
   selectedDate: Date;
   onPreset: (p: Preset) => void;
   onDayChange: (d: Date) => void;
+  customFrom?: string;
+  customTo?: string;
+  onCustomChange?: (from: string, to: string) => void;
 }
 
 const PRESETS: { id: Preset; label: string }[] = [
@@ -16,6 +19,7 @@ const PRESETS: { id: Preset; label: string }[] = [
   { id: "7D", label: "7 days" },
   { id: "30D", label: "30 days" },
   { id: "90D", label: "90 days" },
+  { id: "custom", label: "Custom" },
 ];
 
 function yesterday(): Date {
@@ -24,9 +28,17 @@ function yesterday(): Date {
   return d;
 }
 
-export default function RangeFilter({ preset, selectedDate, onPreset, onDayChange }: RangeFilterProps) {
+function toInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export default function RangeFilter({ preset, selectedDate, onPreset, onDayChange, customFrom, customTo, onCustomChange }: RangeFilterProps) {
   const isToday = selectedDate.toDateString() === new Date().toDateString();
   const isYesterday = selectedDate.toDateString() === yesterday().toDateString();
+  const todayStr = toInputValue(new Date());
 
   function stepDay(delta: number) {
     const d = new Date(selectedDate);
@@ -42,7 +54,7 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
     fontSize: 12,
     fontWeight: 600,
     cursor: "pointer",
-    color: "rgba(240,238,255,0.45)",
+    color: "rgba(240,238,255,0.60)",
     transition: "all 0.15s",
   };
   const btnActive: React.CSSProperties = {
@@ -51,6 +63,18 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
     borderColor: "#FF2D78",
     color: "#FF2D78",
     boxShadow: "0 0 10px rgba(255,45,120,0.30)",
+  };
+
+  const dateInputStyle: React.CSSProperties = {
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,0,110,0.35)",
+    borderRadius: 10,
+    padding: "5px 10px",
+    color: "#F0EEFF",
+    fontSize: 12,
+    outline: "none",
+    colorScheme: "dark",
+    cursor: "pointer",
   };
 
   function dayLabel() {
@@ -69,8 +93,9 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
               onPreset(p.id);
               if (p.id === "1D") onDayChange(yesterday());
             }}
-            style={preset === p.id ? btnActive : btnBase}
+            style={preset === p.id ? { ...btnActive, display: "flex", alignItems: "center", gap: 5 } : { ...btnBase, display: "flex", alignItems: "center", gap: 5 }}
           >
+            {p.id === "custom" && <Calendar size={11} />}
             {p.label}
           </button>
         ))}
@@ -81,7 +106,7 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
           <button onClick={() => stepDay(-1)} style={{ ...btnBase, padding: "6px 10px" }}>
             <ChevronLeft size={14} />
           </button>
-          <span style={{ fontSize: 13, color: "rgba(240,238,255,0.60)", minWidth: 90, textAlign: "center" }}>
+          <span style={{ fontSize: 13, color: "rgba(240,238,255,0.72)", minWidth: 90, textAlign: "center" }}>
             {dayLabel()}
           </span>
           <button onClick={() => stepDay(1)} disabled={isToday} style={{ ...btnBase, padding: "6px 10px", opacity: isToday ? 0.3 : 1 }}>
@@ -95,6 +120,28 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
               Jump to yesterday
             </button>
           )}
+        </div>
+      )}
+
+      {preset === "custom" && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ color: "rgba(240,238,255,0.55)", fontSize: 12 }}>From</span>
+          <input
+            type="date"
+            value={customFrom ?? ""}
+            max={customTo || todayStr}
+            onChange={(e) => onCustomChange?.(e.target.value, customTo ?? e.target.value)}
+            style={dateInputStyle}
+          />
+          <span style={{ color: "rgba(240,238,255,0.55)", fontSize: 12 }}>To</span>
+          <input
+            type="date"
+            value={customTo ?? ""}
+            min={customFrom ?? ""}
+            max={todayStr}
+            onChange={(e) => onCustomChange?.(customFrom ?? e.target.value, e.target.value)}
+            style={dateInputStyle}
+          />
         </div>
       )}
     </div>

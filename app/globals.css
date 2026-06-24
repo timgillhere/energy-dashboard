@@ -44,3 +44,18 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* Prevent iOS from auto-zooming on input focus (inputs < 16px trigger zoom) */
+@media (max-width: 639px) {
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"] {
+    font-size: 16px !important;
+  }
+
+  /* Full-width charts on mobile */
+  canvas {
+    max-width: 100%;
+  }
+}

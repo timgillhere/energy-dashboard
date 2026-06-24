@@ -15,8 +15,9 @@ import RangeFilter, { type Preset } from "./RangeFilter";
 import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { computeDailyCosts, avgRate } from "@/lib/dataUtils";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
-type View = "dashboard" | "history" | "settings";
+type View = "dashboard" | "settings";
 
 function yesterday(): Date {
   const d = new Date();
@@ -24,7 +25,22 @@ function yesterday(): Date {
   return d;
 }
 
-function presetToDateRange(preset: Preset, selectedDate: Date): { from: Date; to: Date } {
+function toInputValue(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function presetToDateRange(
+  preset: Preset,
+  selectedDate: Date,
+  customFrom?: string,
+  customTo?: string
+): { from: Date; to: Date } {
+  if (preset === "custom" && customFrom && customTo) {
+    return {
+      from: new Date(customFrom + "T00:00:00"),
+      to: new Date(customTo + "T23:59:59"),
+    };
+  }
   const to = new Date();
   const from = new Date();
   if (preset === "1D") return { from: selectedDate, to: selectedDate };
@@ -33,13 +49,18 @@ function presetToDateRange(preset: Preset, selectedDate: Date): { from: Date; to
   return { from, to };
 }
 
-function periodLabel(preset: Preset, selectedDate: Date): string {
+function periodLabel(preset: Preset, selectedDate: Date, customFrom?: string, customTo?: string): string {
   if (preset === "1D") {
     const isToday = selectedDate.toDateString() === new Date().toDateString();
     const isYesterday = selectedDate.toDateString() === yesterday().toDateString();
     if (isToday) return "today";
     if (isYesterday) return "yesterday";
     return selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  }
+  if (preset === "custom" && customFrom && customTo) {
+    const from = new Date(customFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    const to = new Date(customTo).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return `${from} – ${to}`;
   }
   return `last ${preset === "7D" ? "7" : preset === "30D" ? "30" : "90"} days`;
 }
@@ -70,11 +91,18 @@ function findNextSlot(results: Rate[]): Rate | null {
 }
 
 export default function Dashboard() {
+  const { isMobile, isTablet } = useBreakpoint();
   const [view, setView] = useState<View>("dashboard");
   const [settings, setSettings] = useState<Settings>(loadSettings);
 
   const [preset, setPreset] = useState<Preset>("1D");
   const [selectedDate, setSelectedDate] = useState<Date>(yesterday);
+  const [customFrom, setCustomFrom] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return toInputValue(d);
+  });
+  const [customTo, setCustomTo] = useState<string>(() => toInputValue(new Date()));
 
   const [elecRate, setElecRate] = useState<Rate | null>(null);
   const [gasRate, setGasRate] = useState<Rate | null>(null);
@@ -90,8 +118,14 @@ export default function Dashboard() {
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
 
-  const dateRange = useMemo(() => presetToDateRange(preset, selectedDate), [preset, selectedDate]);
-  const label = useMemo(() => periodLabel(preset, selectedDate), [preset, selectedDate]);
+  const dateRange = useMemo(
+    () => presetToDateRange(preset, selectedDate, customFrom, customTo),
+    [preset, selectedDate, customFrom, customTo]
+  );
+  const label = useMemo(
+    () => periodLabel(preset, selectedDate, customFrom, customTo),
+    [preset, selectedDate, customFrom, customTo]
+  );
 
   const fallbackElecRate = useMemo(() => avgRate(allElecRates), [allElecRates]);
   const fallbackGasRate = useMemo(() => avgRate(allGasRates), [allGasRates]);
@@ -235,7 +269,7 @@ export default function Dashboard() {
   const gasRateValue = gasRate?.value_inc_vat ?? settings.gasUnitRate;
 
   const sectionLabel: React.CSSProperties = {
-    color: "rgba(0,240,255,0.70)",
+    color: "rgba(0,240,255,0.80)",
     fontSize: 11,
     fontWeight: 700,
     letterSpacing: "0.12em",
@@ -244,75 +278,106 @@ export default function Dashboard() {
     marginTop: 6,
   };
 
+  const contentPadding = isMobile ? "20px 16px 84px" : "28px 28px 60px";
+  const contentMarginLeft = isMobile ? 0 : 64;
+
   return (
     <div style={{ display: "flex", minHeight: "100dvh", background: "#07070F" }}>
       <Nav view={view} onNavigate={setView} />
 
-      <main style={{ marginLeft: 64, flex: 1, padding: "28px 28px 60px", maxWidth: 1040 }}>
+      <main style={{ marginLeft: contentMarginLeft, flex: 1, padding: contentPadding, maxWidth: isMobile ? "100%" : 1040 }}>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "flex-start",
+          marginBottom: 20,
+          gap: 12,
+        }}>
           <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: "#FF2D78", letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 20px rgba(255,45,120,0.60)" }}>
-              {view === "dashboard" ? "Dashboard" : view === "history" ? "History" : "Settings"}
+            <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#FF2D78", letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 20px rgba(255,45,120,0.60)" }}>
+              {view === "dashboard" ? "Dashboard" : "Settings"}
             </h1>
-            <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 13, marginTop: 3 }}>
+            <p style={{ color: "rgba(240,238,255,0.60)", fontSize: 13, marginTop: 3 }}>
               {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
             </p>
           </div>
 
           {view !== "settings" && (
-            <RangeFilter preset={preset} selectedDate={selectedDate} onPreset={setPreset} onDayChange={setSelectedDate} />
+            <RangeFilter
+              preset={preset}
+              selectedDate={selectedDate}
+              onPreset={setPreset}
+              onDayChange={setSelectedDate}
+              customFrom={customFrom}
+              customTo={customTo}
+              onCustomChange={(from, to) => { setCustomFrom(from); setCustomTo(to); }}
+            />
           )}
         </div>
 
         {view === "dashboard" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <RateHero elecRate={elecRate} gasRate={gasRate} tomorrowElec={tomorrowElec} tomorrowGas={tomorrowGas} settings={settings} lastFetch={lastFetch} loading={ratesLoading} error={ratesError} onRefresh={fetchRates} onGoToSettings={() => setView("settings")} />
+            <RateHero
+              elecRate={elecRate}
+              gasRate={gasRate}
+              tomorrowElec={tomorrowElec}
+              tomorrowGas={tomorrowGas}
+              settings={settings}
+              lastFetch={lastFetch}
+              loading={ratesLoading}
+              error={ratesError}
+              onRefresh={fetchRates}
+              onGoToSettings={() => setView("settings")}
+            />
+
             <div>
               <p style={sectionLabel}>{preset === "1D" ? label.charAt(0).toUpperCase() + label.slice(1) : label} at a glance</p>
               <StatsRow days={dailyCosts} periodLabel={label} />
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <SpendToday electricityData={electricityData} gasData={gasData} todayRate={elecRate?.value_inc_vat ?? fallbackElecRate} gasUnitRate={gasRateValue} settings={settings} displayDate={selectedDate} onRefresh={fetchConsumption} />
-              <AlertPanel settings={settings} onToggle={(enabled) => { const updated = { ...settings, alertsEnabled: enabled }; setSettings(updated); persistSettings(updated); }} currentRate={elecRate?.value_inc_vat ?? null} />
-            </div>
-            <div>
-              <p style={sectionLabel}>Half-hourly consumption — {label}</p>
-              <HalfHourlyChart electricityData={electricityData} gasData={gasData} elecRates={allElecRates} gasRates={allGasRates} selectedDate={selectedDate} todayRate={elecRate?.value_inc_vat ?? null} />
-            </div>
-            {preset !== "1D" && (
-              <div>
-                <p style={sectionLabel}>Daily cost — {label}</p>
-                <DailyCostChart days={dailyCosts} periodLabel={label} />
-              </div>
-            )}
-            <div>
-              <p style={sectionLabel}>Tracker rates</p>
-              <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
-            </div>
-          </div>
-        )}
 
-        {view === "history" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div>
-              <p style={sectionLabel}>{label} at a glance</p>
-              <StatsRow days={dailyCosts} periodLabel={label} />
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+              <SpendToday
+                electricityData={electricityData}
+                gasData={gasData}
+                todayRate={elecRate?.value_inc_vat ?? fallbackElecRate}
+                gasUnitRate={gasRateValue}
+                settings={settings}
+                displayDate={selectedDate}
+                onRefresh={fetchConsumption}
+              />
+              <AlertPanel
+                settings={settings}
+                onToggle={(enabled) => { const updated = { ...settings, alertsEnabled: enabled }; setSettings(updated); persistSettings(updated); }}
+                currentRate={elecRate?.value_inc_vat ?? null}
+              />
             </div>
+
             <div>
-              <p style={sectionLabel}>Daily spend — {label}</p>
+              <p style={sectionLabel}>Daily cost — {label}</p>
               <DailyCostChart days={dailyCosts} periodLabel={label} />
             </div>
+
             <div>
-              <p style={sectionLabel}>Half-hourly breakdown — {label}</p>
-              <HalfHourlyChart electricityData={electricityData} gasData={gasData} elecRates={allElecRates} gasRates={allGasRates} selectedDate={selectedDate} todayRate={elecRate?.value_inc_vat ?? null} />
+              <p style={sectionLabel}>Half-hourly consumption — {label}</p>
+              <HalfHourlyChart
+                electricityData={electricityData}
+                gasData={gasData}
+                elecRates={allElecRates}
+                gasRates={allGasRates}
+                selectedDate={selectedDate}
+                todayRate={elecRate?.value_inc_vat ?? null}
+              />
             </div>
+
             <div>
               <p style={sectionLabel}>Usage patterns by time of day</p>
               <UsagePatterns electricityData={electricityData} gasData={gasData} />
             </div>
+
             <div>
-              <p style={sectionLabel}>Tracker rate history</p>
+              <p style={sectionLabel}>Tracker rates</p>
               <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
             </div>
           </div>

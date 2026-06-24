@@ -85,7 +85,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.65)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -137,7 +137,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
     borderRadius: 8,
     padding: "4px 10px",
     fontSize: 11,
-    color: active ? "#FF2D78" : "rgba(240,238,255,0.38)",
+    color: active ? "#FF2D78" : "rgba(240,238,255,0.55)",
     cursor: "pointer",
     boxShadow: active ? "0 0 8px rgba(255,45,120,0.20)" : "none",
   });
@@ -146,7 +146,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Daily Cost
           </p>
           <InfoTip
@@ -162,7 +162,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
       </div>
 
       {days.length === 0 ? (
-        <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
+        <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.52)", fontSize: 13 }}>
           No data for {periodLabel} — add your meter serial numbers in Settings.
         </div>
       ) : (
@@ -172,7 +172,7 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
       )}
 
       {days.some((d) => d.estimated) && (
-        <p style={{ color: "rgba(240,238,255,0.32)", fontSize: 11, marginTop: 8 }}>
+        <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 8 }}>
           * Some days use estimated rates (outside 14-day rate history). Costs are approximate.
         </p>
       )}

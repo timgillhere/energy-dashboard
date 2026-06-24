@@ -4,6 +4,7 @@ import { RefreshCw, Settings } from "lucide-react";
 import Card from "./Card";
 import type { Rate, Settings as SettingsType } from "@/lib/types";
 import { getRateStatus, STATUS_COLORS, STATUS_BG, STATUS_ICONS, STATUS_LABELS } from "@/lib/rateStatus";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
 interface RateHeroProps {
   elecRate: Rate | null;
@@ -26,6 +27,7 @@ function RateTile({
   accentColor,
   standingCharge,
   slotEnd,
+  compact,
 }: {
   label: string;
   rate: number | null;
@@ -34,10 +36,10 @@ function RateTile({
   accentColor: string;
   standingCharge: number;
   slotEnd: string | null;
+  compact?: boolean;
 }) {
   const status = rate !== null && threshold !== undefined ? getRateStatus(rate, threshold) : null;
   const displayColor = status ? STATUS_COLORS[status] : accentColor;
-  const glowColor = displayColor;
 
   return (
     <div
@@ -45,38 +47,38 @@ function RateTile({
         flex: 1,
         background: "rgba(255,255,255,0.03)",
         borderRadius: 16,
-        padding: 20,
+        padding: compact ? 16 : 20,
         border: `1px solid ${accentColor}40`,
         boxShadow: `0 0 16px ${accentColor}18`,
         minWidth: 0,
       }}
     >
-      <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 10 }}>
+      <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 11, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: compact ? 6 : 10 }}>
         {label}
       </p>
 
       {rate !== null ? (
         <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-          <span style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, color: displayColor, letterSpacing: "-0.03em", textShadow: `0 0 20px ${glowColor}80` }}>
+          <span style={{ fontSize: compact ? 42 : 52, fontWeight: 800, lineHeight: 1, color: displayColor, letterSpacing: "-0.03em", textShadow: `0 0 20px ${displayColor}80` }}>
             {rate.toFixed(2)}
           </span>
-          <span style={{ fontSize: 18, color: "rgba(240,238,255,0.35)", fontWeight: 500 }}>p</span>
+          <span style={{ fontSize: compact ? 16 : 18, color: "rgba(240,238,255,0.35)", fontWeight: 500 }}>p</span>
         </div>
       ) : (
-        <span style={{ fontSize: 52, color: "rgba(240,238,255,0.18)", fontWeight: 800, lineHeight: 1 }}>—</span>
+        <span style={{ fontSize: compact ? 42 : 52, color: "rgba(240,238,255,0.18)", fontWeight: 800, lineHeight: 1 }}>—</span>
       )}
 
-      <p style={{ color: "rgba(240,238,255,0.35)", fontSize: 11, marginTop: 6 }}>
+      <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 6 }}>
         + {standingCharge.toFixed(1)}p/day sc
         {slotEnd && <span style={{ marginLeft: 8 }}>· until {slotEnd}</span>}
       </p>
 
       {tomorrowRate !== null && (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${accentColor}28` }}>
-          <span style={{ color: "rgba(240,238,255,0.38)", fontSize: 11 }}>Tomorrow </span>
+          <span style={{ color: "rgba(240,238,255,0.50)", fontSize: 11 }}>Tomorrow </span>
           <span style={{ fontWeight: 700, fontSize: 14, color: accentColor }}>{tomorrowRate.toFixed(2)}p</span>
           {rate !== null && (
-            <span style={{ color: "rgba(240,238,255,0.38)", fontSize: 11, marginLeft: 6 }}>
+            <span style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginLeft: 6 }}>
               {tomorrowRate > rate ? `↑ +${(tomorrowRate - rate).toFixed(2)}` : `↓ ${(tomorrowRate - rate).toFixed(2)}`}
             </span>
           )}
@@ -87,6 +89,7 @@ function RateTile({
 }
 
 export default function RateHero({ elecRate, gasRate, tomorrowElec, tomorrowGas, settings, lastFetch, loading, error, onRefresh, onGoToSettings }: RateHeroProps) {
+  const { isMobile } = useBreakpoint();
   const elecVal = elecRate?.value_inc_vat ?? null;
   const status = elecVal !== null ? getRateStatus(elecVal, settings.alertThreshold) : null;
 
@@ -97,12 +100,12 @@ export default function RateHero({ elecRate, gasRate, tomorrowElec, tomorrowGas,
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           Today's Tracker Rates
         </p>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {lastFetch && (
-            <span style={{ color: "rgba(240,238,255,0.30)", fontSize: 11 }}>
+          {lastFetch && !isMobile && (
+            <span style={{ color: "rgba(240,238,255,0.40)", fontSize: 11 }}>
               {lastFetch.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
             </span>
           )}
@@ -123,7 +126,7 @@ export default function RateHero({ elecRate, gasRate, tomorrowElec, tomorrowGas,
             }}
           >
             <RefreshCw size={12} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-            Refresh
+            {!isMobile && "Refresh"}
           </button>
         </div>
       </div>
@@ -140,9 +143,9 @@ export default function RateHero({ elecRate, gasRate, tomorrowElec, tomorrowGas,
         </div>
       ) : (
         <>
-          <div style={{ display: "flex", gap: 12 }}>
-            <RateTile label="⚡ Electricity" rate={elecVal} tomorrowRate={tomorrowElec?.value_inc_vat ?? null} threshold={settings.alertThreshold} accentColor="#00F0FF" standingCharge={settings.electricityStandingCharge} slotEnd={slotEnd} />
-            <RateTile label="🔥 Gas" rate={gasRate?.value_inc_vat ?? null} tomorrowRate={tomorrowGas?.value_inc_vat ?? null} accentColor="#BF5FFF" standingCharge={settings.gasStandingCharge} slotEnd={null} />
+          <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 12 }}>
+            <RateTile label="⚡ Electricity" rate={elecVal} tomorrowRate={tomorrowElec?.value_inc_vat ?? null} threshold={settings.alertThreshold} accentColor="#00F0FF" standingCharge={settings.electricityStandingCharge} slotEnd={slotEnd} compact={isMobile} />
+            <RateTile label="🔥 Gas" rate={gasRate?.value_inc_vat ?? null} tomorrowRate={tomorrowGas?.value_inc_vat ?? null} accentColor="#BF5FFF" standingCharge={settings.gasStandingCharge} slotEnd={null} compact={isMobile} />
           </div>
 
           {status && elecVal !== null && (
@@ -168,7 +171,7 @@ export default function RateHero({ elecRate, gasRate, tomorrowElec, tomorrowGas,
           )}
 
           {!settings.productCode && elecVal === null && (
-            <p style={{ color: "rgba(240,238,255,0.40)", fontSize: 13, marginTop: 12 }}>
+            <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 13, marginTop: 12 }}>
               No tariff configured.{" "}
               <button onClick={onGoToSettings} style={{ background: "none", border: "none", color: "#00F0FF", cursor: "pointer", fontSize: 13, padding: 0, textShadow: "0 0 8px rgba(0,240,255,0.60)" }}>
                 Open Settings to auto-detect →

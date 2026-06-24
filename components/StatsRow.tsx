@@ -24,26 +24,26 @@ function StatCard({ icon, label, value, sub, tip, accent = "#F0EEFF", glowColor 
   return (
     <div
       style={{
-        flex: 1,
-        minWidth: 0,
+        flex: "1 1 140px",
+        minWidth: 140,
         background: "linear-gradient(135deg, #0C0C1A 0%, #110A1E 100%)",
         border: "1px solid rgba(255,0,110,0.30)",
         borderRadius: 18,
-        padding: "16px 18px",
+        padding: "14px 16px",
         boxShadow: "0 0 16px rgba(255,0,110,0.08)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <span style={{ color: "rgba(240,238,255,0.40)" }}>{icon}</span>
-        <span style={{ color: "rgba(240,238,255,0.40)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", flex: 1 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        <span style={{ color: "rgba(240,238,255,0.55)" }}>{icon}</span>
+        <span style={{ color: "rgba(240,238,255,0.65)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", flex: 1, minWidth: 0 }}>
           {label}
         </span>
         <InfoTip content={tip} />
       </div>
-      <p style={{ fontSize: 26, fontWeight: 800, color: accent, letterSpacing: "-0.02em", lineHeight: 1, textShadow: `0 0 16px ${glow}60` }}>
+      <p style={{ fontSize: 24, fontWeight: 800, color: accent, letterSpacing: "-0.02em", lineHeight: 1, textShadow: `0 0 16px ${glow}60` }}>
         {value}
       </p>
-      {sub && <p style={{ fontSize: 11, color: "rgba(240,238,255,0.32)", marginTop: 4 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: 11, color: "rgba(240,238,255,0.50)", marginTop: 4 }}>{sub}</p>}
     </div>
   );
 }
@@ -51,7 +51,7 @@ function StatCard({ icon, label, value, sub, tip, accent = "#F0EEFF", glowColor 
 export default function StatsRow({ days, periodLabel }: StatsRowProps) {
   if (days.length === 0) {
     return (
-      <div style={{ color: "rgba(240,238,255,0.40)", fontSize: 13, padding: "12px 0" }}>
+      <div style={{ color: "rgba(240,238,255,0.55)", fontSize: 13, padding: "12px 0" }}>
         No consumption data for this period — configure your meter serial numbers in Settings.
       </div>
     );
@@ -69,10 +69,10 @@ export default function StatsRow({ days, periodLabel }: StatsRowProps) {
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
       <StatCard icon={<PoundSterling size={14} />} label="Total spend" value={`£${totalCost.toFixed(2)}`} sub={periodLabel} tip="Total combined electricity and gas cost including standing charges." accent="#F0EEFF" />
       <StatCard icon={<CalendarDays size={14} />} label="Daily average" value={`£${avgCostPerDay.toFixed(2)}`} sub="per day" tip="Average daily energy bill over the selected period." accent="#F0EEFF" />
-      <StatCard icon={<Zap size={14} />} label="Electricity used" value={`${totalElecKwh.toFixed(0)} kWh`} sub={`${(totalElecKwh / days.length).toFixed(1)} kWh/day avg`} tip="Total electricity consumed, read from your smart meter." accent="#00F0FF" glowColor="#00F0FF" />
-      <StatCard icon={<Flame size={14} />} label="Gas used" value={`${totalGasKwh.toFixed(0)} kWh`} sub={`${(totalGasKwh / days.length).toFixed(1)} kWh/day avg`} tip="Total gas consumed in kWh." accent="#BF5FFF" glowColor="#BF5FFF" />
+      <StatCard icon={<Zap size={14} />} label="Electricity" value={`${totalElecKwh.toFixed(0)} kWh`} sub={`${(totalElecKwh / days.length).toFixed(1)} kWh/day`} tip="Total electricity consumed, read from your smart meter." accent="#00F0FF" glowColor="#00F0FF" />
+      <StatCard icon={<Flame size={14} />} label="Gas" value={`${totalGasKwh.toFixed(0)} kWh`} sub={`${(totalGasKwh / days.length).toFixed(1)} kWh/day`} tip="Total gas consumed in kWh." accent="#BF5FFF" glowColor="#BF5FFF" />
       {showForecast && (
-        <StatCard icon={<TrendingUp size={14} />} label="Monthly forecast" value={`£${projectedMonthly.toFixed(0)}`} sub={hasEstimated ? "estimated (partial rates)" : `avg over ${days.length} days`} tip="Projects your daily average spend across 30 days." accent="rgba(240,238,255,0.55)" />
+        <StatCard icon={<TrendingUp size={14} />} label="Monthly est." value={`£${projectedMonthly.toFixed(0)}`} sub={hasEstimated ? "estimated" : `avg × ${days.length} days`} tip="Projects your daily average spend across 30 days." accent="rgba(240,238,255,0.75)" />
       )}
     </div>
   );

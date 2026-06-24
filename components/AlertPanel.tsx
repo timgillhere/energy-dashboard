@@ -46,7 +46,7 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
   return (
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           Rate Alerts
         </p>
         <div
@@ -83,9 +83,9 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
         {settings.alertsEnabled ? (
           <Bell size={16} color="#FF2D78" style={{ filter: "drop-shadow(0 0 6px rgba(255,45,120,0.80))" }} />
         ) : (
-          <BellOff size={16} color="rgba(240,238,255,0.30)" />
+          <BellOff size={16} color="rgba(240,238,255,0.45)" />
         )}
-        <span style={{ color: "rgba(240,238,255,0.60)", fontSize: 13 }}>
+        <span style={{ color: "rgba(240,238,255,0.72)", fontSize: 13 }}>
           {settings.alertsEnabled
             ? `Notify when rate ≤ ${settings.alertThreshold}p/kWh`
             : "Alerts disabled"}
@@ -93,7 +93,7 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
       </div>
 
       {!pushSupported && (
-        <p style={{ color: "rgba(240,238,255,0.32)", fontSize: 12, marginBottom: 8 }}>
+        <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 12, marginBottom: 8 }}>
           Push notifications not supported in this browser.
         </p>
       )}
@@ -112,7 +112,7 @@ export default function AlertPanel({ settings, onToggle, currentRate }: AlertPan
             border: "1px solid rgba(255,0,110,0.35)",
             borderRadius: 12,
             padding: "8px 14px",
-            color: testSent ? "#39FF14" : "rgba(240,238,255,0.60)",
+            color: testSent ? "#39FF14" : "rgba(240,238,255,0.72)",
             fontSize: 12,
             cursor: "pointer",
             width: "100%",

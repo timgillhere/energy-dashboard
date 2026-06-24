@@ -5,7 +5,7 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
-import { SLOT_LABELS, buildHalfHourlySlots } from "@/lib/dataUtils";
+import { SLOT_LABELS, buildHalfHourlySlots, toUKDateKey } from "@/lib/dataUtils";
 import type { ConsumptionInterval, Rate } from "@/lib/types";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
@@ -29,8 +29,9 @@ export default function HalfHourlyChart({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
 
-  const dateKey = selectedDate.toISOString().slice(0, 10);
-  const isToday = dateKey === new Date().toISOString().slice(0, 10);
+  const dateKey = toUKDateKey(selectedDate);
+  const todayKey = toUKDateKey(new Date());
+  const isToday = dateKey === todayKey;
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -85,7 +86,7 @@ export default function HalfHourlyChart({
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.60)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -137,7 +138,7 @@ export default function HalfHourlyChart({
     <Card>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             Half-hourly Usage
           </p>
           <InfoTip
@@ -146,7 +147,7 @@ export default function HalfHourlyChart({
           />
         </div>
         {hasData && (
-          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "rgba(240,238,255,0.45)" }}>
+          <div style={{ display: "flex", gap: 16, fontSize: 12, color: "rgba(240,238,255,0.60)" }}>
             <span>
               <span style={{ color: "#00F0FF", fontWeight: 700, textShadow: "0 0 8px rgba(0,240,255,0.50)" }}>{totalElec.toFixed(2)}</span> kWh elec
             </span>
@@ -167,7 +168,7 @@ export default function HalfHourlyChart({
           <canvas ref={canvasRef} />
         </div>
       ) : (
-        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.52)", fontSize: 13 }}>
           No consumption data for{" "}
           {selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "long" })} — data may not have arrived yet.
         </div>

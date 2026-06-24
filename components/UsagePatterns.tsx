@@ -62,7 +62,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
         interaction: { mode: "index", intersect: false },
         plugins: {
           legend: {
-            labels: { color: "rgba(240,238,255,0.50)", font: { size: 11 }, boxWidth: 12, padding: 16 },
+            labels: { color: "rgba(240,238,255,0.65)", font: { size: 11 }, boxWidth: 12, padding: 16 },
           },
           tooltip: {
             backgroundColor: CHART_DEFAULTS.tooltipBg,
@@ -110,7 +110,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
   return (
     <Card>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <p style={{ color: "rgba(240,238,255,0.55)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
           Usage Patterns
         </p>
         <InfoTip
@@ -120,7 +120,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
       </div>
 
       {hasData && (
-        <p style={{ color: "rgba(240,238,255,0.38)", fontSize: 12, marginBottom: 12 }}>
+        <p style={{ color: "rgba(240,238,255,0.60)", fontSize: 12, marginBottom: 12 }}>
           Your peak electricity use is typically around{" "}
           <span style={{ color: "#00F0FF", fontWeight: 600, textShadow: "0 0 8px rgba(0,240,255,0.50)" }}>{peakTime}</span>
         </p>
@@ -131,7 +131,7 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
           <canvas ref={canvasRef} />
         </div>
       ) : (
-        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.38)", fontSize: 13 }}>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.52)", fontSize: 13 }}>
           No consumption data yet.
         </div>
       )}
