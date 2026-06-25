@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
   const serial = searchParams.get("serial");
   const periodFrom = searchParams.get("period_from");
   const periodTo = searchParams.get("period_to");
-  const pageSize = searchParams.get("page_size") || "100";
 
   if (!mpan || !serial) {
     return NextResponse.json({ error: "Missing mpan or serial" }, { status: 400 });
@@ -20,20 +19,26 @@ export async function GET(req: NextRequest) {
   }
 
   const auth = "Basic " + Buffer.from(apiKey + ":").toString("base64");
-  let url = `${OCTOPUS_BASE}/electricity-meter-points/${mpan}/meters/${serial}/consumption/?page_size=${pageSize}&order_by=period`;
-  if (periodFrom) url += `&period_from=${periodFrom}`;
-  if (periodTo) url += `&period_to=${periodTo}`;
+  let nextUrl: string | null = `${OCTOPUS_BASE}/electricity-meter-points/${mpan}/meters/${serial}/consumption/?page_size=10000&order_by=period`;
+  if (periodFrom) nextUrl += `&period_from=${periodFrom}`;
+  if (periodTo) nextUrl += `&period_to=${periodTo}`;
+
+  const allResults: unknown[] = [];
 
   try {
-    const res = await fetch(url, {
-      headers: { Authorization: auth },
-      next: { revalidate: 1800 },
-    });
-    if (!res.ok) {
-      return NextResponse.json({ error: `Octopus API error: ${res.status}` }, { status: res.status });
+    while (nextUrl) {
+      const res: Response = await fetch(nextUrl, {
+        headers: { Authorization: auth },
+        next: { revalidate: 1800 },
+      });
+      if (!res.ok) {
+        return NextResponse.json({ error: `Octopus API error: ${res.status}` }, { status: res.status });
+      }
+      const data = await res.json();
+      allResults.push(...(data.results ?? []));
+      nextUrl = data.next ?? null;
     }
-    const data = await res.json();
-    return NextResponse.json(data);
+    return NextResponse.json({ results: allResults });
   } catch {
     return NextResponse.json({ error: "Failed to fetch electricity consumption" }, { status: 500 });
   }

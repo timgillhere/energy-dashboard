@@ -9,8 +9,9 @@ import RateForecast from "./RateForecast";
 import RateTrendChart from "./RateTrendChart";
 import CostTrendChart from "./CostTrendChart";
 import WeeklyHeatmap from "./WeeklyHeatmap";
+import MonthlyChart from "./MonthlyChart";
+import CalendarHeatmap from "./CalendarHeatmap";
 import StatsRow from "./StatsRow";
-import HalfHourlyChart from "./HalfHourlyChart";
 import DailyCostChart from "./DailyCostChart";
 import UsagePatterns from "./UsagePatterns";
 import EnergyInsights from "./EnergyInsights";
@@ -148,7 +149,17 @@ export default function Dashboard() {
       electricityData, gasData, allElecRates, allGasRates,
       settings.electricityStandingCharge, settings.gasStandingCharge,
       fallbackElecRate || settings.alertThreshold, fallbackGasRate || settings.gasUnitRate,
-      new Date(Date.now() - 30 * 86400000), new Date()
+      new Date(Date.now() - 90 * 86400000), new Date()
+    ),
+    [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate]
+  );
+
+  const yearCosts = useMemo(
+    () => computeDailyCosts(
+      electricityData, gasData, allElecRates, allGasRates,
+      settings.electricityStandingCharge, settings.gasStandingCharge,
+      fallbackElecRate || settings.alertThreshold, fallbackGasRate || settings.gasUnitRate,
+      new Date(Date.now() - 365 * 86400000), new Date()
     ),
     [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate]
   );
@@ -188,9 +199,9 @@ export default function Dashboard() {
     setRatesError(null);
     try {
       const [elecRes, gasRes] = await Promise.all([
-        fetch(`/api/rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.tariffCode)}&days_back=90`, { cache: "no-store" }),
+        fetch(`/api/rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.tariffCode)}&days_back=365`, { cache: "no-store" }),
         settings.gasTariffCode
-          ? fetch(`/api/gas-rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.gasTariffCode)}&days_back=90`, { cache: "no-store" })
+          ? fetch(`/api/gas-rates?product_code=${encodeURIComponent(settings.productCode)}&tariff_code=${encodeURIComponent(settings.gasTariffCode)}&days_back=365`, { cache: "no-store" })
           : Promise.resolve(null),
       ]);
       const elecData = await elecRes.json();
@@ -212,17 +223,17 @@ export default function Dashboard() {
   }, [settings.productCode, settings.tariffCode, settings.gasTariffCode]);
 
   const fetchConsumption = useCallback(async () => {
-    const { from, to } = getDateRange(180);
+    const { from, to } = getDateRange(365);
     if (settings.mpan && settings.electricitySerial) {
       try {
-        const res = await fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}&page_size=10000`, { cache: "no-store" });
+        const res = await fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
         const data = await res.json();
         setElectricityData(data.results ?? []);
       } catch {}
     }
     if (settings.mprn && settings.gasSerial) {
       try {
-        const res = await fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}&page_size=10000`, { cache: "no-store" });
+        const res = await fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
         const data = await res.json();
         setGasData(data.results ?? []);
       } catch {}
@@ -372,24 +383,17 @@ export default function Dashboard() {
               />
             </div>
 
+            <div>
+              <p style={sectionLabel}>Monthly spend — last 12 months</p>
+              <MonthlyChart days={yearCosts} />
+            </div>
+
             {preset !== "1D" && (
               <div>
                 <p style={sectionLabel}>Daily cost — {label}</p>
                 <DailyCostChart days={dailyCosts} periodLabel={label} />
               </div>
             )}
-
-            <div>
-              <p style={sectionLabel}>Half-hourly consumption — {label}</p>
-              <HalfHourlyChart
-                electricityData={electricityData}
-                gasData={gasData}
-                elecRates={allElecRates}
-                gasRates={allGasRates}
-                selectedDate={selectedDate}
-                todayRate={elecRate?.value_inc_vat ?? null}
-              />
-            </div>
 
             <div>
               <p style={sectionLabel}>Usage patterns by time of day</p>
@@ -401,9 +405,14 @@ export default function Dashboard() {
               <WeeklyHeatmap electricityData={electricityData} />
             </div>
 
+            <div>
+              <p style={sectionLabel}>Annual spend calendar</p>
+              <CalendarHeatmap days={yearCosts} />
+            </div>
+
             {preset !== "1D" && (
               <div>
-                <p style={sectionLabel}>Spend trend — last 30 days</p>
+                <p style={sectionLabel}>Spend trend — last 90 days</p>
                 <CostTrendChart days={trendCosts} />
               </div>
             )}
@@ -414,7 +423,7 @@ export default function Dashboard() {
             </div>
 
             <div>
-              <p style={sectionLabel}>Rate history — 90 days</p>
+              <p style={sectionLabel}>Rate history — 365 days</p>
               <RateTrendChart elecRates={allElecRates} gasRates={allGasRates} />
             </div>
           </div>
