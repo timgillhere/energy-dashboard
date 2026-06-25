@@ -341,7 +341,9 @@ export default function Dashboard() {
               <SpendToday
                 electricityData={electricityData}
                 gasData={gasData}
-                todayRate={elecRate?.value_inc_vat ?? fallbackElecRate}
+                allElecRates={allElecRates}
+                allGasRates={allGasRates}
+                fallbackElecRate={fallbackElecRate}
                 gasUnitRate={gasRateValue}
                 settings={settings}
                 displayDate={selectedDate}

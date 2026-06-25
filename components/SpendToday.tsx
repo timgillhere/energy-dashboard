@@ -2,13 +2,15 @@
 
 import { RefreshCw, Zap, Flame } from "lucide-react";
 import Card from "./Card";
-import type { ConsumptionInterval, Settings } from "@/lib/types";
-import { getIntervalsForUKDate, toUKDateKey } from "@/lib/dataUtils";
+import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
+import { getIntervalsForUKDate, toUKDateKey, getRateForTime } from "@/lib/dataUtils";
 
 interface SpendTodayProps {
   electricityData: ConsumptionInterval[];
   gasData: ConsumptionInterval[];
-  todayRate: number | null;
+  allElecRates: Rate[];
+  allGasRates: Rate[];
+  fallbackElecRate: number;
   gasUnitRate: number;
   settings: Settings;
   displayDate?: Date;
@@ -16,11 +18,23 @@ interface SpendTodayProps {
   refreshing?: boolean;
 }
 
-function calcSpend(data: ConsumptionInterval[], unitRate: number, standingCharge: number, date: Date): { kwh: number; cost: number } {
+function calcSpend(
+  data: ConsumptionInterval[],
+  rates: Rate[],
+  fallbackRate: number,
+  standingCharge: number,
+  date: Date
+): { kwh: number; cost: number } {
   const ukKey = toUKDateKey(date);
   const dayData = getIntervalsForUKDate(data, ukKey);
-  const kwh = dayData.reduce((sum, d) => sum + d.consumption, 0);
-  const cost = dayData.length > 0 ? (kwh * unitRate) / 100 + standingCharge / 100 : 0;
+  if (dayData.length === 0) return { kwh: 0, cost: 0 };
+  let kwh = 0, cost = 0;
+  for (const d of dayData) {
+    const r = getRateForTime(new Date(d.interval_start), rates) ?? fallbackRate;
+    kwh += d.consumption;
+    cost += (d.consumption * r) / 100;
+  }
+  cost += standingCharge / 100;
   return { kwh, cost };
 }
 
@@ -33,11 +47,10 @@ function getSpendLabel(date: Date): string {
   return `Spend — ${date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
 }
 
-export default function SpendToday({ electricityData, gasData, todayRate, gasUnitRate, settings, displayDate, onRefresh, refreshing }: SpendTodayProps) {
+export default function SpendToday({ electricityData, gasData, allElecRates, allGasRates, fallbackElecRate, gasUnitRate, settings, displayDate, onRefresh, refreshing }: SpendTodayProps) {
   const date = displayDate ?? new Date();
-  const elecRate = todayRate ?? 0;
-  const elec = calcSpend(electricityData, elecRate, settings.electricityStandingCharge, date);
-  const gas = calcSpend(gasData, gasUnitRate, settings.gasStandingCharge, date);
+  const elec = calcSpend(electricityData, allElecRates, fallbackElecRate, settings.electricityStandingCharge, date);
+  const gas  = calcSpend(gasData,         allGasRates,  gasUnitRate,       settings.gasStandingCharge,         date);
   const total = elec.cost + gas.cost;
 
   return (
@@ -100,9 +113,9 @@ export default function SpendToday({ electricityData, gasData, todayRate, gasUni
         </div>
       </div>
 
-      {elecRate === 0 && (
+      {elec.kwh === 0 && gas.kwh === 0 && allElecRates.length === 0 && (
         <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 10 }}>
-          Rate unavailable — configure tariff in settings
+          Rates loading — configure tariff in settings if this persists
         </p>
       )}
     </Card>
