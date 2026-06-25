@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { Tooltip } from "./Tooltip";
 
 export type Preset = "1D" | "7D" | "30D" | "90D" | "custom";
 
@@ -101,26 +102,36 @@ export default function RangeFilter({ preset, selectedDate, onPreset, onDayChang
         ))}
       </div>
 
-      {preset === "1D" && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => stepDay(-1)} style={{ ...btnBase, padding: "6px 10px" }}>
-            <ChevronLeft size={14} />
-          </button>
-          <span style={{ fontSize: 13, color: "rgba(240,238,255,0.72)", minWidth: 90, textAlign: "center" }}>
-            {dayLabel()}
-          </span>
-          <button onClick={() => stepDay(1)} disabled={isToday} style={{ ...btnBase, padding: "6px 10px", opacity: isToday ? 0.3 : 1 }}>
-            <ChevronRight size={14} />
-          </button>
-          {!isYesterday && !isToday && (
-            <button
-              onClick={() => { onDayChange(yesterday()); onPreset("1D"); }}
-              style={{ ...btnBase, color: "#00F0FF", borderColor: "rgba(0,240,255,0.40)", boxShadow: "0 0 8px rgba(0,240,255,0.20)" }}
-            >
-              Jump to yesterday
+      {preset !== "custom" && (
+        <Tooltip content="Select 'Day' to navigate by date" side="bottom" width={170}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              opacity: preset === "1D" ? 1 : 0.35,
+              pointerEvents: preset === "1D" ? "auto" : "none",
+            }}
+          >
+            <button onClick={() => stepDay(-1)} style={{ ...btnBase, padding: "6px 10px" }}>
+              <ChevronLeft size={14} />
             </button>
-          )}
-        </div>
+            <span style={{ fontSize: 13, color: "rgba(240,238,255,0.72)", minWidth: 90, textAlign: "center" }}>
+              {dayLabel()}
+            </span>
+            <button onClick={() => stepDay(1)} disabled={isToday} style={{ ...btnBase, padding: "6px 10px", opacity: isToday ? 0.3 : 1 }}>
+              <ChevronRight size={14} />
+            </button>
+            {!isYesterday && !isToday && (
+              <button
+                onClick={() => { onDayChange(yesterday()); onPreset("1D"); }}
+                style={{ ...btnBase, color: "#00F0FF", borderColor: "rgba(0,240,255,0.40)", boxShadow: "0 0 8px rgba(0,240,255,0.20)" }}
+              >
+                Jump to yesterday
+              </button>
+            )}
+          </div>
+        </Tooltip>
       )}
 
       {preset === "custom" && (
