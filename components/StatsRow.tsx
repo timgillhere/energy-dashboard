@@ -4,9 +4,16 @@ import { PoundSterling, Zap, Flame, TrendingUp, CalendarDays } from "lucide-reac
 import { InfoTip } from "./Tooltip";
 import type { DayCost } from "@/lib/dataUtils";
 
+const SKEL: React.CSSProperties = {
+  background: "rgba(255,255,255,0.06)",
+  borderRadius: 6,
+  animation: "pulse 1.5s ease-in-out infinite",
+};
+
 interface StatsRowProps {
   days: DayCost[];
   periodLabel: string;
+  loading?: boolean;
 }
 
 interface StatCardProps {
@@ -48,7 +55,32 @@ function StatCard({ icon, label, value, sub, tip, accent = "#F0EEFF", glowColor 
   );
 }
 
-export default function StatsRow({ days, periodLabel }: StatsRowProps) {
+export default function StatsRow({ days, periodLabel, loading }: StatsRowProps) {
+  if (loading) {
+    return (
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {[140, 110, 130, 120].map((w, i) => (
+          <div
+            key={i}
+            style={{
+              flex: "1 1 140px",
+              minWidth: 140,
+              background: "linear-gradient(135deg, #0C0C1A 0%, #110A1E 100%)",
+              border: "1px solid rgba(255,0,110,0.30)",
+              borderRadius: 18,
+              padding: "14px 16px",
+              boxShadow: "0 0 16px rgba(255,0,110,0.08)",
+            }}
+          >
+            <div style={{ ...SKEL, height: 10, width: "55%", marginBottom: 14 }} />
+            <div style={{ ...SKEL, height: 28, width: `${w}px` }} />
+            <div style={{ ...SKEL, height: 8, width: "40%", marginTop: 8 }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (days.length === 0) {
     return (
       <div style={{ color: "rgba(240,238,255,0.55)", fontSize: 13, padding: "12px 0" }}>

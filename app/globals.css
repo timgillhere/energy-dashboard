@@ -45,6 +45,11 @@ body {
   to { transform: rotate(360deg); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 /* Prevent iOS from auto-zooming on input focus (inputs < 16px trigger zoom) */
 @media (max-width: 639px) {
   input[type="text"],

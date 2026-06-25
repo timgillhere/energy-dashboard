@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Nav from "./Nav";
 import RateHero from "./RateHero";
 import SpendToday from "./SpendToday";
@@ -121,6 +121,9 @@ export default function Dashboard() {
 
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
+  const [consumptionLoading, setConsumptionLoading] = useState(true);
+  const [filterLoading, setFilterLoading] = useState(false);
+  const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dateRange = useMemo(
     () => presetToDateRange(preset, selectedDate, customFrom, customTo),
@@ -223,20 +226,25 @@ export default function Dashboard() {
   }, [settings.productCode, settings.tariffCode, settings.gasTariffCode]);
 
   const fetchConsumption = useCallback(async () => {
+    setConsumptionLoading(true);
     const { from, to } = getDateRange(365);
-    if (settings.mpan && settings.electricitySerial) {
-      try {
-        const res = await fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
-        const data = await res.json();
-        setElectricityData(data.results ?? []);
-      } catch {}
-    }
-    if (settings.mprn && settings.gasSerial) {
-      try {
-        const res = await fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
-        const data = await res.json();
-        setGasData(data.results ?? []);
-      } catch {}
+    try {
+      if (settings.mpan && settings.electricitySerial) {
+        try {
+          const res = await fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
+          const data = await res.json();
+          setElectricityData(data.results ?? []);
+        } catch {}
+      }
+      if (settings.mprn && settings.gasSerial) {
+        try {
+          const res = await fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
+          const data = await res.json();
+          setGasData(data.results ?? []);
+        } catch {}
+      }
+    } finally {
+      setConsumptionLoading(false);
     }
   }, [settings.mpan, settings.electricitySerial, settings.mprn, settings.gasSerial]);
 
@@ -292,6 +300,15 @@ export default function Dashboard() {
 
   const gasRateValue = gasRate?.value_inc_vat ?? settings.gasUnitRate;
 
+  function triggerFilter(fn: () => void) {
+    fn();
+    setFilterLoading(true);
+    if (filterTimer.current) clearTimeout(filterTimer.current);
+    filterTimer.current = setTimeout(() => setFilterLoading(false), 300);
+  }
+
+  const dataLoading = consumptionLoading || filterLoading;
+
   const sectionLabel: React.CSSProperties = {
     color: "rgba(0,240,255,0.80)",
     fontSize: 11,
@@ -332,11 +349,11 @@ export default function Dashboard() {
             <RangeFilter
               preset={preset}
               selectedDate={selectedDate}
-              onPreset={setPreset}
-              onDayChange={setSelectedDate}
+              onPreset={(p) => triggerFilter(() => setPreset(p))}
+              onDayChange={(d) => triggerFilter(() => setSelectedDate(d))}
               customFrom={customFrom}
               customTo={customTo}
-              onCustomChange={(from, to) => { setCustomFrom(from); setCustomTo(to); }}
+              onCustomChange={(from, to) => triggerFilter(() => { setCustomFrom(from); setCustomTo(to); })}
             />
           )}
         </div>
@@ -358,7 +375,7 @@ export default function Dashboard() {
 
             <div>
               <p style={sectionLabel}>{preset === "1D" ? label.charAt(0).toUpperCase() + label.slice(1) : label} at a glance</p>
-              <StatsRow days={dailyCosts} periodLabel={label} />
+              <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} />
             </div>
 
             <SpendToday
@@ -371,6 +388,7 @@ export default function Dashboard() {
               settings={settings}
               displayDate={selectedDate}
               onRefresh={fetchConsumption}
+              loading={dataLoading}
             />
 
             <div>
@@ -380,6 +398,7 @@ export default function Dashboard() {
                 gasData={gasData}
                 allElecRates={allElecRates}
                 dailyCosts={dailyCosts}
+                loading={dataLoading}
               />
             </div>
 
@@ -391,7 +410,7 @@ export default function Dashboard() {
             {preset !== "1D" && (
               <div>
                 <p style={sectionLabel}>Daily cost — {label}</p>
-                <DailyCostChart days={dailyCosts} periodLabel={label} />
+                <DailyCostChart days={dailyCosts} periodLabel={label} loading={dataLoading} />
               </div>
             )}
 

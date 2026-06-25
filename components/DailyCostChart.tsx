@@ -13,9 +13,10 @@ type ViewMode = "stacked" | "electricity" | "gas";
 interface DailyCostChartProps {
   days: DayCost[];
   periodLabel: string;
+  loading?: boolean;
 }
 
-export default function DailyCostChart({ days, periodLabel }: DailyCostChartProps) {
+export default function DailyCostChart({ days, periodLabel, loading }: DailyCostChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
   const [mode, setMode] = useState<ViewMode>("stacked");
@@ -161,7 +162,22 @@ export default function DailyCostChart({ days, periodLabel }: DailyCostChartProp
         </div>
       </div>
 
-      {days.length === 0 ? (
+      {loading ? (
+        <div style={{ height: 200, display: "flex", alignItems: "flex-end", gap: 4, padding: "0 4px" }}>
+          {[60, 90, 45, 120, 80, 110, 55, 95, 70, 130, 50, 85].map((h, i) => (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: h,
+                background: "rgba(255,255,255,0.06)",
+                borderRadius: "4px 4px 0 0",
+                animation: `pulse 1.5s ease-in-out ${i * 0.08}s infinite`,
+              }}
+            />
+          ))}
+        </div>
+      ) : days.length === 0 ? (
         <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.52)", fontSize: 13 }}>
           No data for {periodLabel} — add your meter serial numbers in Settings.
         </div>
