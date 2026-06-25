@@ -4,16 +4,16 @@ const OCTOPUS_BASE = "https://api.octopus.energy/v1";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const mpan = searchParams.get("mpan");
-  const serial = searchParams.get("serial");
   const periodFrom = searchParams.get("period_from");
   const periodTo = searchParams.get("period_to");
 
-  if (!mpan || !serial) {
-    return NextResponse.json({ error: "Missing mpan or serial" }, { status: 400 });
-  }
-
+  const mpan = process.env.MPAN;
+  const serial = process.env.ELECTRICITY_SERIAL;
   const apiKey = process.env.OCTOPUS_API_KEY;
+
+  if (!mpan || !serial) {
+    return NextResponse.json({ error: "MPAN or ELECTRICITY_SERIAL not configured on server" }, { status: 500 });
+  }
   if (!apiKey) {
     return NextResponse.json({ error: "API key not configured on server" }, { status: 500 });
   }

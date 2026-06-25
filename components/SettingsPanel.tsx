@@ -91,32 +91,21 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
   }
 
   async function handleAutoDetect() {
-    if (!form.mpan && !form.mprn) {
-      setDetectMsg({ ok: false, text: "Enter your MPAN and/or MPRN first." });
-      return;
-    }
     setDetecting(true);
     setDetectMsg(null);
     try {
-      const params = new URLSearchParams();
-      if (form.mpan) params.set("mpan", form.mpan);
-      if (form.mprn) params.set("mprn", form.mprn);
-      const res = await fetch(`/api/tariff?${params}`);
+      const res = await fetch("/api/tariff");
       const data = await res.json();
       if (!res.ok || data.error) {
-        setDetectMsg({ ok: false, text: data.error ?? "Auto-detect failed — check MPAN/MPRN and API key." });
+        setDetectMsg({ ok: false, text: data.error ?? "Auto-detect failed — check API key." });
         return;
       }
-      const { electricityTariffCode, gasTariffCode, productCode, mpan, mprn, electricitySerial, gasSerial } = data;
+      const { electricityTariffCode, gasTariffCode, productCode } = data;
       setForm((prev) => ({
         ...prev,
         ...(productCode ? { productCode } : {}),
         ...(electricityTariffCode ? { tariffCode: electricityTariffCode } : {}),
         ...(gasTariffCode ? { gasTariffCode } : {}),
-        ...(mpan ? { mpan } : {}),
-        ...(mprn ? { mprn } : {}),
-        ...(electricitySerial ? { electricitySerial } : {}),
-        ...(gasSerial ? { gasSerial } : {}),
       }));
       setDetectMsg({
         ok: true,
@@ -135,8 +124,6 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
         <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Electricity Meter
         </p>
-        <Field label="MPAN" value={form.mpan} onChange={(v) => set("mpan", v)} placeholder="1200000000000" />
-        <Field label="Meter Serial Number" value={form.electricitySerial} onChange={(v) => set("electricitySerial", v)} placeholder="E1A00000" />
         <Field label="Standing Charge (p/day)" value={String(form.electricityStandingCharge)} onChange={(v) => set("electricityStandingCharge", parseFloat(v) || 0)} type="number" />
       </Card>
 
@@ -144,8 +131,6 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
         <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
           Gas Meter
         </p>
-        <Field label="MPRN" value={form.mprn} onChange={(v) => set("mprn", v)} placeholder="1234567890" />
-        <Field label="Meter Serial Number" value={form.gasSerial} onChange={(v) => set("gasSerial", v)} placeholder="G1A00000" />
         <Field label="Standing Charge (p/day)" value={String(form.gasStandingCharge)} onChange={(v) => set("gasStandingCharge", parseFloat(v) || 0)} type="number" />
         <Field
           label="Fallback unit rate (p/kWh)"
@@ -180,7 +165,7 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
             }}
           >
             <Zap size={13} />
-            {detecting ? "Detecting…" : "Auto-detect from MPAN"}
+            {detecting ? "Detecting…" : "Auto-detect tariff"}
           </button>
         </div>
 
@@ -274,7 +259,7 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
       )}
 
       <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, textAlign: "center" }}>
-        Settings stored locally in your browser. Octopus API key is on the server.
+        Settings stored locally in your browser. Meter IDs and API key are on the server.
       </p>
     </div>
   );

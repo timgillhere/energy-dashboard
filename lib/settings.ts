@@ -1,10 +1,6 @@
 import type { Settings } from "./types";
 
 export const DEFAULT_SETTINGS: Settings = {
-  mpan: "",
-  electricitySerial: "",
-  mprn: "",
-  gasSerial: "",
   productCode: "",
   tariffCode: "",
   gasTariffCode: "",

@@ -238,15 +238,11 @@ export default function Dashboard() {
     const fetchRecent = async () => {
       try {
         const [elecRes, gasRes] = await Promise.all([
-          settings.mpan && settings.electricitySerial
-            ? fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from7}&period_to=${to7}`, { cache: "no-store" })
-            : null,
-          settings.mprn && settings.gasSerial
-            ? fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from7}&period_to=${to7}`, { cache: "no-store" })
-            : null,
+          fetch(`/api/consumption/electricity?period_from=${from7}&period_to=${to7}`, { cache: "no-store" }),
+          fetch(`/api/consumption/gas?period_from=${from7}&period_to=${to7}`, { cache: "no-store" }),
         ]);
-        if (elecRes?.ok) { const d = await elecRes.json(); setRecentElectricityData(d.results ?? []); }
-        if (gasRes?.ok) { const d = await gasRes.json(); setRecentGasData(d.results ?? []); }
+        if (elecRes.ok) { const d = await elecRes.json(); setRecentElectricityData(d.results ?? []); }
+        if (gasRes.ok) { const d = await gasRes.json(); setRecentGasData(d.results ?? []); }
       } catch {}
       setRecentConsumptionLoading(false);
     };
@@ -254,21 +250,17 @@ export default function Dashboard() {
     const fetchFull = async () => {
       try {
         const [elecRes, gasRes] = await Promise.all([
-          settings.mpan && settings.electricitySerial
-            ? fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" })
-            : null,
-          settings.mprn && settings.gasSerial
-            ? fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" })
-            : null,
+          fetch(`/api/consumption/electricity?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
+          fetch(`/api/consumption/gas?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
         ]);
-        if (elecRes?.ok) { const d = await elecRes.json(); setElectricityData(d.results ?? []); }
-        if (gasRes?.ok) { const d = await gasRes.json(); setGasData(d.results ?? []); }
+        if (elecRes.ok) { const d = await elecRes.json(); setElectricityData(d.results ?? []); }
+        if (gasRes.ok) { const d = await gasRes.json(); setGasData(d.results ?? []); }
       } catch {}
       setConsumptionLoading(false);
     };
 
     await Promise.all([fetchRecent(), fetchFull()]);
-  }, [settings.mpan, settings.electricitySerial, settings.mprn, settings.gasSerial]);
+  }, []);
 
   useEffect(() => { fetchRates(); fetchConsumption(); }, [fetchRates, fetchConsumption]);
   useEffect(() => { const id = setInterval(fetchRates, 30 * 60 * 1000); return () => clearInterval(id); }, [fetchRates]);
@@ -294,10 +286,6 @@ export default function Dashboard() {
           productCode: data.productCode,
           tariffCode: data.electricityTariffCode ?? prev.tariffCode,
           gasTariffCode: data.gasTariffCode ?? prev.gasTariffCode,
-          mpan: data.mpan ?? prev.mpan,
-          mprn: data.mprn ?? prev.mprn,
-          electricitySerial: data.electricitySerial ?? prev.electricitySerial,
-          gasSerial: data.gasSerial ?? prev.gasSerial,
         };
         saveSettings(updated);
         fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updated) }).catch(() => {});

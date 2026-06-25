@@ -4,16 +4,16 @@ const OCTOPUS_BASE = "https://api.octopus.energy/v1";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const mprn = searchParams.get("mprn");
-  const serial = searchParams.get("serial");
   const periodFrom = searchParams.get("period_from");
   const periodTo = searchParams.get("period_to");
 
-  if (!mprn || !serial) {
-    return NextResponse.json({ error: "Missing mprn or serial" }, { status: 400 });
-  }
-
+  const mprn = process.env.MPRN;
+  const serial = process.env.GAS_SERIAL;
   const apiKey = process.env.OCTOPUS_API_KEY;
+
+  if (!mprn || !serial) {
+    return NextResponse.json({ error: "MPRN or GAS_SERIAL not configured on server" }, { status: 500 });
+  }
   if (!apiKey) {
     return NextResponse.json({ error: "API key not configured on server" }, { status: 500 });
   }

@@ -1,8 +1,4 @@
 export interface Settings {
-  mpan: string;
-  electricitySerial: string;
-  mprn: string;
-  gasSerial: string;
   productCode: string;
   tariffCode: string;
   gasTariffCode: string;
