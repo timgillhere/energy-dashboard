@@ -57,6 +57,8 @@ function Field({
 export default function SettingsPanel({ settings, onSave, currentRate }: SettingsPanelProps) {
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [detecting, setDetecting] = useState(false);
   const [detectMsg, setDetectMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -64,11 +66,28 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleSave() {
-    saveSettings(form);
-    onSave(form);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  async function handleSave() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      saveSettings(form);
+      onSave(form);
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!data.ok) setSaveError("Saved locally — cloud sync unavailable.");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      setSaveError("Saved locally — network error syncing to cloud.");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleAutoDetect() {
@@ -222,22 +241,37 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
 
       <button
         onClick={handleSave}
+        disabled={saving}
         style={{
-          background: saved ? "rgba(57,255,20,0.10)" : "rgba(255,0,110,0.15)",
-          border: saved ? "1px solid rgba(57,255,20,0.40)" : "1px solid #FF2D78",
+          background: saved ? "rgba(57,255,20,0.10)" : saving ? "rgba(255,0,110,0.07)" : "rgba(255,0,110,0.15)",
+          border: saved ? "1px solid rgba(57,255,20,0.40)" : saving ? "1px solid rgba(255,45,120,0.40)" : "1px solid #FF2D78",
           borderRadius: 16,
           padding: "14px 24px",
           fontSize: 15,
           fontWeight: 700,
-          color: saved ? "#39FF14" : "#FF2D78",
-          cursor: "pointer",
+          color: saved ? "#39FF14" : saving ? "rgba(255,45,120,0.50)" : "#FF2D78",
+          cursor: saving ? "not-allowed" : "pointer",
           transition: "all 0.2s",
-          boxShadow: saved ? "0 0 16px rgba(57,255,20,0.30)" : "0 0 20px rgba(255,45,120,0.35)",
-          textShadow: saved ? "0 0 10px rgba(57,255,20,0.70)" : "0 0 10px rgba(255,45,120,0.70)",
+          boxShadow: saved ? "0 0 16px rgba(57,255,20,0.30)" : saving ? "none" : "0 0 20px rgba(255,45,120,0.35)",
+          textShadow: saved ? "0 0 10px rgba(57,255,20,0.70)" : saving ? "none" : "0 0 10px rgba(255,45,120,0.70)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          width: "100%",
         }}
       >
-        {saved ? "✓ Saved" : "Save Settings"}
+        {saving && (
+          <span style={{ width: 14, height: 14, border: "2px solid rgba(255,45,120,0.30)", borderTopColor: "rgba(255,45,120,0.70)", borderRadius: "50%", display: "inline-block", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+        )}
+        {saving ? "Saving…" : saved ? "✓ Saved" : "Save Settings"}
       </button>
+
+      {saveError && (
+        <p style={{ color: "rgba(255,180,0,0.85)", fontSize: 12, textAlign: "center", marginTop: -8 }}>
+          {saveError}
+        </p>
+      )}
 
       <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, textAlign: "center" }}>
         Settings stored locally in your browser. Octopus API key is on the server.

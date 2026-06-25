@@ -295,7 +295,7 @@ export default function Dashboard() {
     setElecRate(null); setGasRate(null);
     setRatesError(null);
     setAllElecRates([]); setAllGasRates([]);
-    persistSettings(updated);
+    saveSettings(updated);
   }
 
   const gasRateValue = gasRate?.value_inc_vat ?? settings.gasUnitRate;
