@@ -69,9 +69,8 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
+    saveSettings(form);
     try {
-      saveSettings(form);
-      onSave(form);
       const res = await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,6 +86,7 @@ export default function SettingsPanel({ settings, onSave, currentRate }: Setting
       setTimeout(() => setSaved(false), 2500);
     } finally {
       setSaving(false);
+      onSave(form);
     }
   }
 

@@ -121,6 +121,9 @@ export default function Dashboard() {
 
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
+  const [recentElectricityData, setRecentElectricityData] = useState<ConsumptionInterval[]>([]);
+  const [recentGasData, setRecentGasData] = useState<ConsumptionInterval[]>([]);
+  const [recentConsumptionLoading, setRecentConsumptionLoading] = useState(true);
   const [consumptionLoading, setConsumptionLoading] = useState(true);
   const [filterLoading, setFilterLoading] = useState(false);
   const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -226,26 +229,45 @@ export default function Dashboard() {
   }, [settings.productCode, settings.tariffCode, settings.gasTariffCode]);
 
   const fetchConsumption = useCallback(async () => {
+    setRecentConsumptionLoading(true);
     setConsumptionLoading(true);
+
+    const { from: from7, to: to7 } = getDateRange(7);
     const { from, to } = getDateRange(365);
-    try {
-      if (settings.mpan && settings.electricitySerial) {
-        try {
-          const res = await fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
-          const data = await res.json();
-          setElectricityData(data.results ?? []);
-        } catch {}
-      }
-      if (settings.mprn && settings.gasSerial) {
-        try {
-          const res = await fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" });
-          const data = await res.json();
-          setGasData(data.results ?? []);
-        } catch {}
-      }
-    } finally {
+
+    const fetchRecent = async () => {
+      try {
+        const [elecRes, gasRes] = await Promise.all([
+          settings.mpan && settings.electricitySerial
+            ? fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from7}&period_to=${to7}`, { cache: "no-store" })
+            : null,
+          settings.mprn && settings.gasSerial
+            ? fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from7}&period_to=${to7}`, { cache: "no-store" })
+            : null,
+        ]);
+        if (elecRes?.ok) { const d = await elecRes.json(); setRecentElectricityData(d.results ?? []); }
+        if (gasRes?.ok) { const d = await gasRes.json(); setRecentGasData(d.results ?? []); }
+      } catch {}
+      setRecentConsumptionLoading(false);
+    };
+
+    const fetchFull = async () => {
+      try {
+        const [elecRes, gasRes] = await Promise.all([
+          settings.mpan && settings.electricitySerial
+            ? fetch(`/api/consumption/electricity?mpan=${settings.mpan}&serial=${settings.electricitySerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" })
+            : null,
+          settings.mprn && settings.gasSerial
+            ? fetch(`/api/consumption/gas?mprn=${settings.mprn}&serial=${settings.gasSerial}&period_from=${from}&period_to=${to}`, { cache: "no-store" })
+            : null,
+        ]);
+        if (elecRes?.ok) { const d = await elecRes.json(); setElectricityData(d.results ?? []); }
+        if (gasRes?.ok) { const d = await gasRes.json(); setGasData(d.results ?? []); }
+      } catch {}
       setConsumptionLoading(false);
-    }
+    };
+
+    await Promise.all([fetchRecent(), fetchFull()]);
   }, [settings.mpan, settings.electricitySerial, settings.mprn, settings.gasSerial]);
 
   useEffect(() => { fetchRates(); fetchConsumption(); }, [fetchRates, fetchConsumption]);
@@ -308,6 +330,7 @@ export default function Dashboard() {
   }
 
   const dataLoading = consumptionLoading || filterLoading;
+  const spendLoading = recentConsumptionLoading || filterLoading;
 
   const sectionLabel: React.CSSProperties = {
     color: "rgba(0,240,255,0.80)",
@@ -379,8 +402,8 @@ export default function Dashboard() {
             </div>
 
             <SpendToday
-              electricityData={electricityData}
-              gasData={gasData}
+              electricityData={recentElectricityData}
+              gasData={recentGasData}
               allElecRates={allElecRates}
               allGasRates={allGasRates}
               fallbackElecRate={fallbackElecRate}
@@ -388,7 +411,7 @@ export default function Dashboard() {
               settings={settings}
               displayDate={selectedDate}
               onRefresh={fetchConsumption}
-              loading={dataLoading}
+              loading={spendLoading}
             />
 
             <div>

@@ -19,11 +19,13 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     await put(BLOB_PATH, JSON.stringify(body), {
-      access: "public",
+      access: "private",
       addRandomSuffix: false,
     });
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 500 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[settings POST]", msg);
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }
