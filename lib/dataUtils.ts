@@ -7,6 +7,12 @@ export function toUKDateKey(utcDate: Date): string {
   return bst.toISOString().slice(0, 10);
 }
 
+// For user-selected dates (local-timezone Dates from new Date()/setDate()):
+// read the local date components directly rather than treating as UTC.
+export function localDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 // Returns 0–47 for the BST half-hour slot of a UTC timestamp
 export function toHalfHourSlot(utcDate: Date): number {
   const bst = new Date(utcDate.getTime() + 60 * 60 * 1000);
@@ -53,6 +59,26 @@ export function buildHalfHourlySlots(
     slots[slot] = (slots[slot] ?? 0) + d.consumption;
   }
   return slots;
+}
+
+// Build a 7×48 grid of average kWh by (UK day-of-week × half-hour slot)
+// Returned dow index: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+export function buildWeeklyHeatmap(data: ConsumptionInterval[]): number[][] {
+  const sums = Array.from({ length: 7 }, () => Array(48).fill(0));
+  const counts = Array.from({ length: 7 }, () => Array(48).fill(0));
+  for (const d of data) {
+    const ts = new Date(d.interval_start);
+    const bst = new Date(ts.getTime() + 60 * 60 * 1000); // UTC → BST
+    // getUTCDay() on the BST date: 0=Sun → remap to 0=Mon
+    const rawDow = bst.getUTCDay(); // 0=Sun
+    const dow = rawDow === 0 ? 6 : rawDow - 1; // 0=Mon … 6=Sun
+    const slot = toHalfHourSlot(ts);
+    sums[dow][slot] += d.consumption;
+    counts[dow][slot]++;
+  }
+  return sums.map((row, dow) =>
+    row.map((s, slot) => (counts[dow][slot] > 0 ? s / counts[dow][slot] : 0))
+  );
 }
 
 // Average consumption by half-hour slot across all available data

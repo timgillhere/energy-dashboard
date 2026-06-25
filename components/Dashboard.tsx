@@ -6,6 +6,9 @@ import RateHero from "./RateHero";
 import SpendToday from "./SpendToday";
 import SettingsPanel from "./SettingsPanel";
 import RateForecast from "./RateForecast";
+import RateTrendChart from "./RateTrendChart";
+import CostTrendChart from "./CostTrendChart";
+import WeeklyHeatmap from "./WeeklyHeatmap";
 import StatsRow from "./StatsRow";
 import HalfHourlyChart from "./HalfHourlyChart";
 import DailyCostChart from "./DailyCostChart";
@@ -138,6 +141,16 @@ export default function Dashboard() {
       dateRange.from, dateRange.to
     ),
     [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate, dateRange]
+  );
+
+  const trendCosts = useMemo(
+    () => computeDailyCosts(
+      electricityData, gasData, allElecRates, allGasRates,
+      settings.electricityStandingCharge, settings.gasStandingCharge,
+      fallbackElecRate || settings.alertThreshold, fallbackGasRate || settings.gasUnitRate,
+      new Date(Date.now() - 30 * 86400000), new Date()
+    ),
+    [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate]
   );
 
   useEffect(() => {
@@ -384,8 +397,25 @@ export default function Dashboard() {
             </div>
 
             <div>
+              <p style={sectionLabel}>Weekly usage rhythm</p>
+              <WeeklyHeatmap electricityData={electricityData} />
+            </div>
+
+            {preset !== "1D" && (
+              <div>
+                <p style={sectionLabel}>Spend trend — last 30 days</p>
+                <CostTrendChart days={trendCosts} />
+              </div>
+            )}
+
+            <div>
               <p style={sectionLabel}>Tracker rates</p>
               <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
+            </div>
+
+            <div>
+              <p style={sectionLabel}>Rate history — 90 days</p>
+              <RateTrendChart elecRates={allElecRates} gasRates={allGasRates} />
             </div>
           </div>
         )}

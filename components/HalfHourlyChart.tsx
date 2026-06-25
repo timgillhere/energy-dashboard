@@ -5,7 +5,7 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
-import { SLOT_LABELS, buildHalfHourlySlots, toUKDateKey } from "@/lib/dataUtils";
+import { SLOT_LABELS, buildHalfHourlySlots, localDateKey } from "@/lib/dataUtils";
 import type { ConsumptionInterval, Rate } from "@/lib/types";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
@@ -29,8 +29,8 @@ export default function HalfHourlyChart({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
 
-  const dateKey = toUKDateKey(selectedDate);
-  const todayKey = toUKDateKey(new Date());
+  const dateKey = localDateKey(selectedDate);
+  const todayKey = localDateKey(new Date());
   const isToday = dateKey === todayKey;
 
   useEffect(() => {
@@ -133,6 +133,8 @@ export default function HalfHourlyChart({
   const rate = todayRate ?? 0;
   const elecCost = (totalElec * rate) / 100;
   const hasData = elecSlots.some((v) => v !== null) || gasSlots.some((v) => v !== null);
+  const intervalCount = elecSlots.filter((v) => v !== null).length;
+  const isPartial = hasData && intervalCount < 40;
 
   return (
     <Card>
@@ -172,6 +174,12 @@ export default function HalfHourlyChart({
           No consumption data for{" "}
           {selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "long" })} — data may not have arrived yet.
         </div>
+      )}
+
+      {isPartial && (
+        <p style={{ color: "rgba(240,238,255,0.38)", fontSize: 11, marginTop: 8 }}>
+          Partial data ({intervalCount}/48 intervals) — smart meter readings typically sync within 48 hours.
+        </p>
       )}
     </Card>
   );
