@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Nav from "./Nav";
 import RateHero from "./RateHero";
 import SpendToday from "./SpendToday";
-import AlertPanel from "./AlertPanel";
 import SettingsPanel from "./SettingsPanel";
 import RateForecast from "./RateForecast";
 import StatsRow from "./StatsRow";
 import HalfHourlyChart from "./HalfHourlyChart";
 import DailyCostChart from "./DailyCostChart";
 import UsagePatterns from "./UsagePatterns";
+import EnergyInsights from "./EnergyInsights";
 import RangeFilter, { type Preset } from "./RangeFilter";
 import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
 import { loadSettings, saveSettings } from "@/lib/settings";
@@ -337,29 +337,34 @@ export default function Dashboard() {
               <StatsRow days={dailyCosts} periodLabel={label} />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-              <SpendToday
+            <SpendToday
+              electricityData={electricityData}
+              gasData={gasData}
+              allElecRates={allElecRates}
+              allGasRates={allGasRates}
+              fallbackElecRate={fallbackElecRate}
+              gasUnitRate={gasRateValue}
+              settings={settings}
+              displayDate={selectedDate}
+              onRefresh={fetchConsumption}
+            />
+
+            <div>
+              <p style={sectionLabel}>Insights</p>
+              <EnergyInsights
                 electricityData={electricityData}
                 gasData={gasData}
                 allElecRates={allElecRates}
-                allGasRates={allGasRates}
-                fallbackElecRate={fallbackElecRate}
-                gasUnitRate={gasRateValue}
-                settings={settings}
-                displayDate={selectedDate}
-                onRefresh={fetchConsumption}
-              />
-              <AlertPanel
-                settings={settings}
-                onToggle={(enabled) => { const updated = { ...settings, alertsEnabled: enabled }; setSettings(updated); persistSettings(updated); }}
-                currentRate={elecRate?.value_inc_vat ?? null}
+                dailyCosts={dailyCosts}
               />
             </div>
 
-            <div>
-              <p style={sectionLabel}>Daily cost — {label}</p>
-              <DailyCostChart days={dailyCosts} periodLabel={label} />
-            </div>
+            {preset !== "1D" && (
+              <div>
+                <p style={sectionLabel}>Daily cost — {label}</p>
+                <DailyCostChart days={dailyCosts} periodLabel={label} />
+              </div>
+            )}
 
             <div>
               <p style={sectionLabel}>Half-hourly consumption — {label}</p>
@@ -385,7 +390,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {view === "settings" && <SettingsPanel settings={settings} onSave={handleSaveSettings} />}
+        {view === "settings" && <SettingsPanel settings={settings} onSave={handleSaveSettings} currentRate={elecRate?.value_inc_vat ?? null} />}
 
       </main>
     </div>

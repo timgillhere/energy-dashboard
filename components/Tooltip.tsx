@@ -27,6 +27,7 @@ export function Tooltip({ content, children, side = "top", width = 180 }: Toolti
       style={{ position: "relative", display: "inline-flex", alignItems: "center" }}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
+      onClick={(e) => { e.stopPropagation(); setVisible((v) => !v); }}
     >
       {children}
       {visible && (
@@ -55,10 +56,26 @@ export function Tooltip({ content, children, side = "top", width = 180 }: Toolti
   );
 }
 
-export function InfoTip({ content, width }: { content: string; width?: number }) {
+export function InfoTip({ content, width, side }: { content: string; width?: number; side?: "top" | "right" | "bottom" | "left" }) {
   return (
-    <Tooltip content={content} width={width}>
-      <Info size={13} color="rgba(240,238,255,0.30)" style={{ cursor: "default", flexShrink: 0 }} />
+    <Tooltip content={content} width={width} side={side ?? "bottom"}>
+      <button
+        type="button"
+        style={{
+          background: "none",
+          border: "none",
+          padding: 4,
+          cursor: "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          lineHeight: 1,
+          touchAction: "manipulation",
+        }}
+        aria-label="More information"
+      >
+        <Info size={13} color="rgba(240,238,255,0.30)" style={{ flexShrink: 0, pointerEvents: "none" }} />
+      </button>
     </Tooltip>
   );
 }

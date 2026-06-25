@@ -73,7 +73,7 @@ function RateTile({
         {slotEnd && <span style={{ marginLeft: 8 }}>· until {slotEnd}</span>}
       </p>
 
-      {tomorrowRate !== null && (
+      {tomorrowRate !== null ? (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${accentColor}28` }}>
           <span style={{ color: "rgba(240,238,255,0.50)", fontSize: 11 }}>Tomorrow </span>
           <span style={{ fontWeight: 700, fontSize: 14, color: accentColor }}>{tomorrowRate.toFixed(2)}p</span>
@@ -83,6 +83,10 @@ function RateTile({
             </span>
           )}
         </div>
+      ) : (
+        <p style={{ color: "rgba(240,238,255,0.28)", fontSize: 11, marginTop: 10 }}>
+          Tomorrow: not yet published
+        </p>
       )}
     </div>
   );

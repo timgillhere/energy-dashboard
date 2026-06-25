@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { Zap } from "lucide-react";
 import Card from "./Card";
+import AlertPanel from "./AlertPanel";
 import type { Settings } from "@/lib/types";
 import { saveSettings } from "@/lib/settings";
 
 interface SettingsPanelProps {
   settings: Settings;
   onSave: (s: Settings) => void;
+  currentRate?: number | null;
 }
 
 function Field({
@@ -52,7 +54,7 @@ function Field({
   );
 }
 
-export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) {
+export default function SettingsPanel({ settings, onSave, currentRate }: SettingsPanelProps) {
   const [form, setForm] = useState({ ...settings });
   const [saved, setSaved] = useState(false);
   const [detecting, setDetecting] = useState(false);
@@ -202,10 +204,7 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
         />
       </Card>
 
-      <Card>
-        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", marginBottom: 16 }}>
-          Alert Settings
-        </p>
+      <div>
         <Field
           label="Rate threshold (p/kWh)"
           hint="Get notified when the electricity rate drops below this level"
@@ -214,38 +213,12 @@ export default function SettingsPanel({ settings, onSave }: SettingsPanelProps) 
           type="number"
           placeholder="25"
         />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ color: "rgba(240,238,255,0.72)", fontSize: 13 }}>Rate alerts enabled</span>
-          <div
-            onClick={() => set("alertsEnabled", !form.alertsEnabled)}
-            style={{
-              width: 44,
-              height: 24,
-              borderRadius: 12,
-              background: form.alertsEnabled ? "#FF2D78" : "rgba(255,255,255,0.06)",
-              border: form.alertsEnabled ? "1px solid #FF2D78" : "1px solid rgba(255,255,255,0.15)",
-              boxShadow: form.alertsEnabled ? "0 0 14px rgba(255,45,120,0.70)" : "none",
-              position: "relative",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-          >
-            <div
-              style={{
-                position: "absolute",
-                top: 3,
-                left: form.alertsEnabled ? 22 : 3,
-                width: 16,
-                height: 16,
-                borderRadius: "50%",
-                background: form.alertsEnabled ? "#07070F" : "rgba(240,238,255,0.50)",
-                boxShadow: "0 1px 3px rgba(0,0,0,0.40)",
-                transition: "left 0.2s",
-              }}
-            />
-          </div>
-        </div>
-      </Card>
+        <AlertPanel
+          settings={form}
+          onToggle={(enabled) => set("alertsEnabled", enabled)}
+          currentRate={currentRate ?? null}
+        />
+      </div>
 
       <button
         onClick={handleSave}

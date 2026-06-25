@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Card from "./Card";
 import type { Rate } from "@/lib/types";
+import { useBreakpoint } from "@/lib/useBreakpoint";
 
 interface DayRow {
   label: string;
@@ -49,30 +50,31 @@ function rateColor(val: number, avg: number): string {
   return "#FF2D78";
 }
 
-function TableRow({ row, elecAvg, gasAvg }: { row: DayRow; elecAvg: number; gasAvg: number }) {
+function TableRow({ row, elecAvg, gasAvg, compact }: { row: DayRow; elecAvg: number; gasAvg: number; compact?: boolean }) {
   const elecDelta = row.elec !== null ? row.elec - elecAvg : null;
+  const cellPad = compact ? "7px 8px 7px 0" : "9px 16px 9px 0";
   return (
     <tr style={{ borderTop: "1px solid rgba(255,0,110,0.12)", background: row.isToday ? "rgba(255,0,110,0.06)" : "transparent" }}>
-      <td style={{ padding: "9px 16px 9px 0", color: row.isToday ? "#F0EEFF" : "rgba(240,238,255,0.72)", fontWeight: row.isToday ? 700 : 400 }}>
+      <td style={{ padding: cellPad, color: row.isToday ? "#F0EEFF" : "rgba(240,238,255,0.72)", fontWeight: row.isToday ? 700 : 400 }}>
         {row.label}
         {row.isToday && (
-          <span style={{ marginLeft: 8, fontSize: 10, background: "#FF2D78", color: "#07070F", borderRadius: 6, padding: "1px 5px", fontWeight: 700, boxShadow: "0 0 8px rgba(255,45,120,0.60)" }}>
+          <span style={{ marginLeft: 6, fontSize: 10, background: "#FF2D78", color: "#07070F", borderRadius: 6, padding: "1px 5px", fontWeight: 700, boxShadow: "0 0 8px rgba(255,45,120,0.60)" }}>
             TODAY
           </span>
         )}
         {row.isTomorrow && (
-          <span style={{ marginLeft: 8, fontSize: 10, background: "rgba(0,240,255,0.12)", color: "#00F0FF", borderRadius: 6, padding: "1px 5px", fontWeight: 600, border: "1px solid rgba(0,240,255,0.35)" }}>
+          <span style={{ marginLeft: 6, fontSize: 10, background: "rgba(0,240,255,0.12)", color: "#00F0FF", borderRadius: 6, padding: "1px 5px", fontWeight: 600, border: "1px solid rgba(0,240,255,0.35)" }}>
             TOMORROW
           </span>
         )}
       </td>
-      <td style={{ textAlign: "right", padding: "9px 16px 9px 0", fontWeight: 600, color: row.elec !== null ? rateColor(row.elec, elecAvg) : "rgba(240,238,255,0.30)" }}>
+      <td style={{ textAlign: "right", padding: cellPad, fontWeight: 600, color: row.elec !== null ? rateColor(row.elec, elecAvg) : "rgba(240,238,255,0.30)" }}>
         {row.elec?.toFixed(2) ?? "—"}
       </td>
-      <td style={{ textAlign: "right", padding: "9px 16px 9px 0", fontWeight: 600, color: row.gas !== null ? rateColor(row.gas, gasAvg) : "rgba(240,238,255,0.30)" }}>
+      <td style={{ textAlign: "right", padding: cellPad, fontWeight: 600, color: row.gas !== null ? rateColor(row.gas, gasAvg) : "rgba(240,238,255,0.30)" }}>
         {row.gas?.toFixed(2) ?? "—"}
       </td>
-      <td style={{ textAlign: "right", padding: "9px 0", fontSize: 12, color: elecDelta === null ? "rgba(240,238,255,0.30)" : elecDelta > 0 ? "#FF2D78" : "#39FF14" }}>
+      <td style={{ textAlign: "right", padding: compact ? "7px 0" : "9px 0", fontSize: 12, color: elecDelta === null ? "rgba(240,238,255,0.30)" : elecDelta > 0 ? "#FF2D78" : "#39FF14" }}>
         {elecDelta !== null ? `${elecDelta > 0 ? "+" : ""}${elecDelta.toFixed(2)}p` : "—"}
       </td>
     </tr>
@@ -86,6 +88,7 @@ interface RateForecastProps {
 
 export default function RateForecast({ elecRates, gasRates }: RateForecastProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
+  const { isMobile } = useBreakpoint();
 
   if (elecRates.length === 0) return null;
 
@@ -96,12 +99,13 @@ export default function RateForecast({ elecRates, gasRates }: RateForecastProps)
   const pinnedRows = rows.filter((r) => r.isTomorrow || r.isToday);
   const historyRows = rows.filter((r) => !r.isTomorrow && !r.isToday);
 
+  const thPad = isMobile ? "0 8px 8px 0" : "0 16px 8px 0";
   const thead = (
     <thead>
       <tr>
-        <th style={{ textAlign: "left", color: "rgba(240,238,255,0.55)", fontWeight: 600, paddingBottom: 8, paddingRight: 16, fontSize: 12 }}>Date</th>
-        <th style={{ textAlign: "right", color: "#00F0FF", fontWeight: 600, paddingBottom: 8, paddingRight: 16, fontSize: 12 }}>⚡ Elec p/kWh</th>
-        <th style={{ textAlign: "right", color: "#BF5FFF", fontWeight: 600, paddingBottom: 8, paddingRight: 16, fontSize: 12 }}>🔥 Gas p/kWh</th>
+        <th style={{ textAlign: "left", color: "rgba(240,238,255,0.55)", fontWeight: 600, padding: thPad, fontSize: 12 }}>Date</th>
+        <th style={{ textAlign: "right", color: "#00F0FF", fontWeight: 600, padding: thPad, fontSize: 12 }}>⚡ {isMobile ? "Elec" : "Elec p/kWh"}</th>
+        <th style={{ textAlign: "right", color: "#BF5FFF", fontWeight: 600, padding: thPad, fontSize: 12 }}>🔥 {isMobile ? "Gas" : "Gas p/kWh"}</th>
         <th style={{ textAlign: "right", color: "rgba(240,238,255,0.55)", fontWeight: 600, paddingBottom: 8, fontSize: 12 }}>vs avg</th>
       </tr>
     </thead>
@@ -117,11 +121,11 @@ export default function RateForecast({ elecRates, gasRates }: RateForecastProps)
       </div>
 
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: isMobile ? 12 : 13 }}>
           {thead}
           <tbody>
             {pinnedRows.map((row, i) => (
-              <TableRow key={i} row={row} elecAvg={elecAvg} gasAvg={gasAvg} />
+              <TableRow key={i} row={row} elecAvg={elecAvg} gasAvg={gasAvg} compact={isMobile} />
             ))}
           </tbody>
         </table>
@@ -157,17 +161,17 @@ export default function RateForecast({ elecRates, gasRates }: RateForecastProps)
 
       {historyOpen && (
         <div style={{ overflowX: "auto", marginTop: 4 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: isMobile ? 12 : 13 }}>
             <tbody>
               {historyRows.map((row, i) => (
-                <TableRow key={i} row={row} elecAvg={elecAvg} gasAvg={gasAvg} />
+                <TableRow key={i} row={row} elecAvg={elecAvg} gasAvg={gasAvg} compact={isMobile} />
               ))}
             </tbody>
             <tfoot>
               <tr style={{ borderTop: "1px solid rgba(255,0,110,0.20)" }}>
-                <td style={{ padding: "9px 16px 0 0", color: "rgba(240,238,255,0.52)", fontSize: 12 }}>14-day avg</td>
-                <td style={{ textAlign: "right", padding: "9px 16px 0 0", color: "rgba(240,238,255,0.72)", fontSize: 12 }}>{elecAvg.toFixed(2)}</td>
-                <td style={{ textAlign: "right", padding: "9px 16px 0 0", color: "rgba(240,238,255,0.72)", fontSize: 12 }}>{gasAvg.toFixed(2)}</td>
+                <td style={{ padding: isMobile ? "7px 8px 0 0" : "9px 16px 0 0", color: "rgba(240,238,255,0.52)", fontSize: 12 }}>14-day avg</td>
+                <td style={{ textAlign: "right", padding: isMobile ? "7px 8px 0 0" : "9px 16px 0 0", color: "rgba(240,238,255,0.72)", fontSize: 12 }}>{elecAvg.toFixed(2)}</td>
+                <td style={{ textAlign: "right", padding: isMobile ? "7px 8px 0 0" : "9px 16px 0 0", color: "rgba(240,238,255,0.72)", fontSize: 12 }}>{gasAvg.toFixed(2)}</td>
                 <td />
               </tr>
             </tfoot>
