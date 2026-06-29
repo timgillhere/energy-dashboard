@@ -296,6 +296,7 @@ export default function Dashboard() {
   }
 
   const dataLoading = consumptionLoading || filterLoading;
+  const costLoading = consumptionLoading || ratesLoading || filterLoading;
 
   const sectionLabel: React.CSSProperties = {
     color: "rgba(0,240,255,0.80)",
@@ -373,8 +374,8 @@ export default function Dashboard() {
               <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} singleDayView={preset === "1D"} />
             </div>
 
-            <MonthCompare yearCosts={yearCosts} loading={consumptionLoading} />
-            <WeekCompare yearCosts={yearCosts} loading={consumptionLoading} />
+            <MonthCompare yearCosts={yearCosts} loading={costLoading} />
+            <WeekCompare yearCosts={yearCosts} loading={costLoading} />
 
             <div>
               <p style={sectionLabel}>Insights</p>
@@ -383,7 +384,7 @@ export default function Dashboard() {
                 gasData={gasData}
                 allElecRates={allElecRates}
                 dailyCosts={dailyCosts}
-                loading={dataLoading}
+                loading={costLoading}
               />
             </div>
 
@@ -395,7 +396,7 @@ export default function Dashboard() {
             {preset !== "1D" && (
               <div>
                 <p style={sectionLabel}>Daily cost — {label}</p>
-                <DailyCostChart days={dailyCosts} periodLabel={label} loading={dataLoading} />
+                <DailyCostChart days={dailyCosts} periodLabel={label} loading={costLoading} />
               </div>
             )}
 

@@ -2,14 +2,9 @@
 
 import { RefreshCw, Zap, Flame } from "lucide-react";
 import Card from "./Card";
+import LoadingGif from "./LoadingGif";
 import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
 import { getIntervalsForUKDate, toUKDateKey, getRateForTime } from "@/lib/dataUtils";
-
-const SKEL: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  borderRadius: 6,
-  animation: "pulse 1.5s ease-in-out infinite",
-};
 
 interface SpendTodayProps {
   electricityData: ConsumptionInterval[];
@@ -90,19 +85,7 @@ export default function SpendToday({ electricityData, gasData, allElecRates, all
       </div>
 
       {loading ? (
-        <>
-          <div style={{ ...SKEL, height: 56, width: 160, marginBottom: 16 }} />
-          <div style={{ display: "flex", gap: 12 }}>
-            <div style={{ flex: 1, background: "rgba(0,240,255,0.03)", borderRadius: 14, padding: 12, border: "1px solid rgba(0,240,255,0.12)" }}>
-              <div style={{ ...SKEL, height: 10, width: "50%", marginBottom: 12 }} />
-              <div style={{ ...SKEL, height: 24, width: "65%" }} />
-            </div>
-            <div style={{ flex: 1, background: "rgba(191,95,255,0.03)", borderRadius: 14, padding: 12, border: "1px solid rgba(191,95,255,0.12)" }}>
-              <div style={{ ...SKEL, height: 10, width: "50%", marginBottom: 12 }} />
-              <div style={{ ...SKEL, height: 24, width: "65%" }} />
-            </div>
-          </div>
-        </>
+        <LoadingGif height={156} />
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 16 }}>

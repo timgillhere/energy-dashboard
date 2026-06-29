@@ -2,13 +2,8 @@
 
 import { Zap, Flame } from "lucide-react";
 import Card from "./Card";
+import LoadingGif from "./LoadingGif";
 import type { DayCost } from "@/lib/dataUtils";
-
-const SKEL: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  borderRadius: 6,
-  animation: "pulse 1.5s ease-in-out infinite",
-};
 
 interface MonthCompareProps {
   yearCosts: DayCost[];
@@ -22,22 +17,7 @@ function monthName(yyyyMm: string): string {
 
 export default function MonthCompare({ yearCosts, loading }: MonthCompareProps) {
   if (loading) {
-    return (
-      <Card>
-        <div style={{ ...SKEL, height: 12, width: "55%", marginBottom: 14 }} />
-        <div style={{ ...SKEL, height: 52, width: 160, marginBottom: 16 }} />
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1, background: "rgba(0,240,255,0.03)", borderRadius: 14, padding: 12, border: "1px solid rgba(0,240,255,0.12)" }}>
-            <div style={{ ...SKEL, height: 10, width: "50%", marginBottom: 12 }} />
-            <div style={{ ...SKEL, height: 24, width: "65%" }} />
-          </div>
-          <div style={{ flex: 1, background: "rgba(191,95,255,0.03)", borderRadius: 14, padding: 12, border: "1px solid rgba(191,95,255,0.12)" }}>
-            <div style={{ ...SKEL, height: 10, width: "50%", marginBottom: 12 }} />
-            <div style={{ ...SKEL, height: 24, width: "65%" }} />
-          </div>
-        </div>
-      </Card>
-    );
+    return <Card><LoadingGif height={202} /></Card>;
   }
 
   const now = new Date();

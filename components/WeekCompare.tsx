@@ -2,13 +2,8 @@
 
 import { Zap, Flame, TrendingDown, TrendingUp, Minus } from "lucide-react";
 import Card from "./Card";
+import LoadingGif from "./LoadingGif";
 import type { DayCost } from "@/lib/dataUtils";
-
-const SKEL: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  borderRadius: 6,
-  animation: "pulse 1.5s ease-in-out infinite",
-};
 
 interface WeekCompareProps {
   yearCosts: DayCost[];
@@ -61,21 +56,7 @@ function pctBadge(pct: number, direction: "up" | "down" | "flat") {
 
 export default function WeekCompare({ yearCosts, loading }: WeekCompareProps) {
   if (loading) {
-    return (
-      <Card>
-        <div style={{ ...SKEL, height: 12, width: "50%", marginBottom: 14 }} />
-        <div style={{ display: "flex", gap: 12 }}>
-          {[0, 1].map((i) => (
-            <div key={i} style={{ flex: 1, background: "rgba(255,255,255,0.03)", borderRadius: 14, padding: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ ...SKEL, height: 10, width: "60%", marginBottom: 12 }} />
-              <div style={{ ...SKEL, height: 22, width: "75%", marginBottom: 8 }} />
-              <div style={{ ...SKEL, height: 10, width: "50%", marginBottom: 6 }} />
-              <div style={{ ...SKEL, height: 10, width: "50%" }} />
-            </div>
-          ))}
-        </div>
-      </Card>
-    );
+    return <Card><LoadingGif height={138} /></Card>;
   }
 
   const { thisMonday, lastMonday, lastSunday, daysIntoWeek } = getWeekBounds();

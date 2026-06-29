@@ -2,14 +2,9 @@
 
 import { Zap, Clock, TrendingDown, TrendingUp, Calendar } from "lucide-react";
 import { buildAveragePattern, SLOT_LABELS } from "@/lib/dataUtils";
+import LoadingGif from "./LoadingGif";
 import type { ConsumptionInterval, Rate } from "@/lib/types";
 import type { DayCost } from "@/lib/dataUtils";
-
-const SKEL: React.CSSProperties = {
-  background: "rgba(255,255,255,0.06)",
-  borderRadius: 6,
-  animation: "pulse 1.5s ease-in-out infinite",
-};
 
 interface EnergyInsightsProps {
   electricityData: ConsumptionInterval[];
@@ -143,28 +138,7 @@ function bestRateDay(rates: Rate[]): { label: string; value: number } | null {
 
 export default function EnergyInsights({ electricityData, gasData, allElecRates, dailyCosts, loading }: EnergyInsightsProps) {
   if (loading) {
-    return (
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            style={{
-              flex: "1 1 180px",
-              minWidth: 160,
-              background: "linear-gradient(135deg, #0C0C1A 0%, #110A1E 100%)",
-              border: "1px solid rgba(255,0,110,0.22)",
-              borderRadius: 18,
-              padding: "14px 16px",
-            }}
-          >
-            <div style={{ ...SKEL, height: 10, width: "45%", marginBottom: 14 }} />
-            <div style={{ ...SKEL, height: 18, width: "70%", marginBottom: 10 }} />
-            <div style={{ ...SKEL, height: 8, width: "90%" }} />
-            <div style={{ ...SKEL, height: 8, width: "75%", marginTop: 6 }} />
-          </div>
-        ))}
-      </div>
-    );
+    return <LoadingGif height={106} />;
   }
 
   if (electricityData.length === 0 && allElecRates.length === 0) return null;
