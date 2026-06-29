@@ -14,6 +14,7 @@ interface StatsRowProps {
   days: DayCost[];
   periodLabel: string;
   loading?: boolean;
+  singleDayView?: boolean;
 }
 
 interface StatCardProps {
@@ -55,7 +56,7 @@ function StatCard({ icon, label, value, sub, tip, accent = "#F0EEFF", glowColor 
   );
 }
 
-export default function StatsRow({ days, periodLabel, loading }: StatsRowProps) {
+export default function StatsRow({ days, periodLabel, loading, singleDayView }: StatsRowProps) {
   if (loading) {
     return (
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -89,6 +90,14 @@ export default function StatsRow({ days, periodLabel, loading }: StatsRowProps) 
     );
   }
 
+  if (singleDayView && days.length === 1 && days[0].elecIntervalCount < 48) {
+    return (
+      <div style={{ color: "rgba(240,238,255,0.45)", fontSize: 13, padding: "12px 0" }}>
+        Data for {days[0].label} isn't fully available yet — Octopus typically updates within a few hours. Check back later.
+      </div>
+    );
+  }
+
   const totalCost = days.reduce((s, d) => s + d.total, 0);
   const avgCostPerDay = totalCost / days.length;
   const totalElecKwh = days.reduce((s, d) => s + d.electricityKwh, 0);
@@ -97,18 +106,10 @@ export default function StatsRow({ days, periodLabel, loading }: StatsRowProps) 
   const hasEstimated = days.some((d) => d.estimated);
   const showForecast = days.length > 1;
   const showDailyAvg = days.length > 1;
-  const noConsumption = days.every((d) => d.electricityKwh === 0 && d.gasKwh === 0);
 
   return (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-      <StatCard
-        icon={<PoundSterling size={14} />}
-        label="Total spend"
-        value={noConsumption ? "—" : `£${totalCost.toFixed(2)}`}
-        sub={noConsumption ? "Data updates through the day" : periodLabel}
-        tip="Total combined electricity and gas cost including standing charges."
-        accent="#F0EEFF"
-      />
+      <StatCard icon={<PoundSterling size={14} />} label="Total spend" value={`£${totalCost.toFixed(2)}`} sub={periodLabel} tip="Total combined electricity and gas cost including standing charges." accent="#F0EEFF" />
       {showDailyAvg && <StatCard icon={<CalendarDays size={14} />} label="Daily average" value={`£${avgCostPerDay.toFixed(2)}`} sub="per day" tip="Average daily energy bill over the selected period." accent="#F0EEFF" />}
       <StatCard icon={<Zap size={14} />} label="Electricity" value={`${totalElecKwh.toFixed(0)} kWh`} sub={`${(totalElecKwh / days.length).toFixed(1)} kWh/day`} tip="Total electricity consumed, read from your smart meter." accent="#00F0FF" glowColor="#00F0FF" />
       <StatCard icon={<Flame size={14} />} label="Gas" value={`${totalGasKwh.toFixed(0)} kWh`} sub={`${(totalGasKwh / days.length).toFixed(1)} kWh/day`} tip="Total gas consumed in kWh." accent="#BF5FFF" glowColor="#BF5FFF" />

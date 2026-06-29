@@ -102,6 +102,8 @@ export interface DayCost {
   gasCost: number;
   total: number;
   estimated: boolean;
+  elecIntervalCount: number;
+  gasIntervalCount: number;
 }
 
 export function computeDailyCosts(
@@ -158,6 +160,8 @@ export function computeDailyCosts(
       gasCost,
       total: elecCost + gasCost,
       estimated: elecEst || gasEst,
+      elecIntervalCount: elecIntervals.length,
+      gasIntervalCount: gasIntervals.length,
     });
 
     cur.setDate(cur.getDate() + 1);

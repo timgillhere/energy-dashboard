@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Nav from "./Nav";
 import RateHero from "./RateHero";
 import MonthCompare from "./MonthCompare";
+import WeekCompare from "./WeekCompare";
 import SettingsPanel from "./SettingsPanel";
 import RateForecast from "./RateForecast";
 import RateTrendChart from "./RateTrendChart";
@@ -369,10 +370,11 @@ export default function Dashboard() {
 
             <div>
               <p style={sectionLabel}>{preset === "1D" ? label.charAt(0).toUpperCase() + label.slice(1) : label} at a glance</p>
-              <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} />
+              <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} singleDayView={preset === "1D"} />
             </div>
 
             <MonthCompare yearCosts={yearCosts} loading={consumptionLoading} />
+            <WeekCompare yearCosts={yearCosts} loading={consumptionLoading} />
 
             <div>
               <p style={sectionLabel}>Insights</p>
