@@ -16,59 +16,12 @@ import StatsRow from "./StatsRow";
 import DailyCostChart from "./DailyCostChart";
 import UsagePatterns from "./UsagePatterns";
 import EnergyInsights from "./EnergyInsights";
-import RangeFilter, { type Preset } from "./RangeFilter";
 import type { Rate, ConsumptionInterval, Settings } from "@/lib/types";
 import { loadSettings, saveSettings } from "@/lib/settings";
 import { computeDailyCosts, avgRate } from "@/lib/dataUtils";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 
 type View = "dashboard" | "settings";
-
-function yesterday(): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d;
-}
-
-function toInputValue(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function presetToDateRange(
-  preset: Preset,
-  selectedDate: Date,
-  customFrom?: string,
-  customTo?: string
-): { from: Date; to: Date } {
-  if (preset === "custom" && customFrom && customTo) {
-    return {
-      from: new Date(customFrom + "T00:00:00"),
-      to: new Date(customTo + "T23:59:59"),
-    };
-  }
-  const to = new Date();
-  const from = new Date();
-  if (preset === "1D") return { from: selectedDate, to: selectedDate };
-  const days = preset === "7D" ? 7 : preset === "30D" ? 30 : 90;
-  from.setDate(from.getDate() - days + 1);
-  return { from, to };
-}
-
-function periodLabel(preset: Preset, selectedDate: Date, customFrom?: string, customTo?: string): string {
-  if (preset === "1D") {
-    const isToday = selectedDate.toDateString() === new Date().toDateString();
-    const isYesterday = selectedDate.toDateString() === yesterday().toDateString();
-    if (isToday) return "today";
-    if (isYesterday) return "yesterday";
-    return selectedDate.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-  }
-  if (preset === "custom" && customFrom && customTo) {
-    const from = new Date(customFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    const to = new Date(customTo).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-    return `${from} – ${to}`;
-  }
-  return `last ${preset === "7D" ? "7" : preset === "30D" ? "30" : "90"} days`;
-}
 
 function getDateRange(daysBack: number) {
   const to = new Date();
@@ -100,15 +53,6 @@ export default function Dashboard() {
   const [view, setView] = useState<View>("dashboard");
   const [settings, setSettings] = useState<Settings>(loadSettings);
 
-  const [preset, setPreset] = useState<Preset>("1D");
-  const [selectedDate, setSelectedDate] = useState<Date>(yesterday);
-  const [customFrom, setCustomFrom] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return toInputValue(d);
-  });
-  const [customTo, setCustomTo] = useState<string>(() => toInputValue(new Date()));
-
   const [elecRate, setElecRate] = useState<Rate | null>(null);
   const [gasRate, setGasRate] = useState<Rate | null>(null);
   const [tomorrowElec, setTomorrowElec] = useState<Rate | null>(null);
@@ -123,17 +67,6 @@ export default function Dashboard() {
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
   const [consumptionLoading, setConsumptionLoading] = useState(true);
-  const [filterLoading, setFilterLoading] = useState(false);
-  const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const dateRange = useMemo(
-    () => presetToDateRange(preset, selectedDate, customFrom, customTo),
-    [preset, selectedDate, customFrom, customTo]
-  );
-  const label = useMemo(
-    () => periodLabel(preset, selectedDate, customFrom, customTo),
-    [preset, selectedDate, customFrom, customTo]
-  );
 
   const fallbackElecRate = useMemo(() => avgRate(allElecRates), [allElecRates]);
   const fallbackGasRate = useMemo(() => avgRate(allGasRates), [allGasRates]);
@@ -143,9 +76,9 @@ export default function Dashboard() {
       electricityData, gasData, allElecRates, allGasRates,
       settings.electricityStandingCharge, settings.gasStandingCharge,
       fallbackElecRate || settings.alertThreshold, fallbackGasRate || settings.gasUnitRate,
-      dateRange.from, dateRange.to
+      new Date(Date.now() - 30 * 86400000), new Date()
     ),
-    [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate, dateRange]
+    [electricityData, gasData, allElecRates, allGasRates, settings, fallbackElecRate, fallbackGasRate]
   );
 
   const trendCosts = useMemo(
@@ -288,15 +221,8 @@ export default function Dashboard() {
 
   const gasRateValue = gasRate?.value_inc_vat ?? settings.gasUnitRate;
 
-  function triggerFilter(fn: () => void) {
-    fn();
-    setFilterLoading(true);
-    if (filterTimer.current) clearTimeout(filterTimer.current);
-    filterTimer.current = setTimeout(() => setFilterLoading(false), 300);
-  }
-
-  const dataLoading = consumptionLoading || filterLoading;
-  const costLoading = consumptionLoading || ratesLoading || filterLoading;
+  const dataLoading = consumptionLoading;
+  const costLoading = consumptionLoading || ratesLoading;
 
   const sectionLabel: React.CSSProperties = {
     color: "rgba(0,240,255,0.80)",
@@ -317,32 +243,13 @@ export default function Dashboard() {
 
       <main style={{ marginLeft: contentMarginLeft, flex: 1, padding: contentPadding, maxWidth: isMobile ? "100%" : 1040 }}>
 
-        <div style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "flex-start",
-          marginBottom: 20,
-          gap: 12,
-        }}>
-          <div>
-            <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#FF2D78", letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 20px rgba(255,45,120,0.60)" }}>
-              {view === "dashboard" ? "Dashboard" : "Settings"}
-            </h1>
-            <p style={{ color: "rgba(240,238,255,0.60)", fontSize: 13, marginTop: 3 }}>
-              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
-            </p>
-          </div>
-
-          {view !== "settings" && (
-            <RangeFilter
-              preset={preset}
-              onPreset={(p) => triggerFilter(() => setPreset(p))}
-              customFrom={customFrom}
-              customTo={customTo}
-              onCustomChange={(from, to) => triggerFilter(() => { setCustomFrom(from); setCustomTo(to); })}
-            />
-          )}
+        <div style={{ marginBottom: 20 }}>
+          <h1 style={{ fontSize: isMobile ? 18 : 22, fontWeight: 800, color: "#FF2D78", letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 20px rgba(255,45,120,0.60)" }}>
+            {view === "dashboard" ? "Dashboard" : "Settings"}
+          </h1>
+          <p style={{ color: "rgba(240,238,255,0.60)", fontSize: 13, marginTop: 3 }}>
+            {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
         </div>
 
         {view === "dashboard" && (
@@ -370,8 +277,8 @@ export default function Dashboard() {
             </div>
 
             <div>
-              <p style={sectionLabel}>{preset === "1D" ? label.charAt(0).toUpperCase() + label.slice(1) : label} at a glance</p>
-              <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} singleDayView={preset === "1D"} />
+              <p style={sectionLabel}>Last 30 days at a glance</p>
+              <StatsRow days={dailyCosts} periodLabel="last 30 days" loading={dataLoading} />
             </div>
 
             <MonthCompare yearCosts={yearCosts} loading={costLoading} />
@@ -393,12 +300,10 @@ export default function Dashboard() {
               <MonthlyChart days={yearCosts} />
             </div>
 
-            {preset !== "1D" && (
-              <div>
-                <p style={sectionLabel}>Daily cost — {label}</p>
-                <DailyCostChart days={dailyCosts} periodLabel={label} loading={costLoading} />
-              </div>
-            )}
+            <div>
+              <p style={sectionLabel}>Daily cost — last 30 days</p>
+              <DailyCostChart days={dailyCosts} periodLabel="last 30 days" loading={costLoading} />
+            </div>
 
             <div>
               <p style={sectionLabel}>Usage patterns by time of day</p>
@@ -415,12 +320,10 @@ export default function Dashboard() {
               <CalendarHeatmap days={yearCosts} />
             </div>
 
-            {preset !== "1D" && (
-              <div>
-                <p style={sectionLabel}>Spend trend — last 90 days</p>
-                <CostTrendChart days={trendCosts} />
-              </div>
-            )}
+            <div>
+              <p style={sectionLabel}>Spend trend — last 90 days</p>
+              <CostTrendChart days={trendCosts} />
+            </div>
 
             <div>
               <p style={sectionLabel}>Tracker rates</p>
