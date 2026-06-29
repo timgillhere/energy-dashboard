@@ -85,7 +85,7 @@ export default function WeekCompare({ yearCosts, loading }: WeekCompareProps) {
     return dt >= thisMonday && dt < new Date();
   });
   // Last week: same number of days as we have this week (for a fair comparison)
-  const compareCount = Math.max(thisWeekDays.length, 1);
+  const compareCount = thisWeekDays.length;
   const lastWeekDays = yearCosts
     .filter((d) => {
       const dt = new Date(d.dateKey + "T12:00:00");
