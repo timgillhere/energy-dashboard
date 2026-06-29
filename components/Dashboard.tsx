@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Nav from "./Nav";
 import RateHero from "./RateHero";
-import SpendToday from "./SpendToday";
+import MonthCompare from "./MonthCompare";
 import SettingsPanel from "./SettingsPanel";
 import RateForecast from "./RateForecast";
 import RateTrendChart from "./RateTrendChart";
@@ -121,9 +121,6 @@ export default function Dashboard() {
 
   const [electricityData, setElectricityData] = useState<ConsumptionInterval[]>([]);
   const [gasData, setGasData] = useState<ConsumptionInterval[]>([]);
-  const [recentElectricityData, setRecentElectricityData] = useState<ConsumptionInterval[]>([]);
-  const [recentGasData, setRecentGasData] = useState<ConsumptionInterval[]>([]);
-  const [recentConsumptionLoading, setRecentConsumptionLoading] = useState(true);
   const [consumptionLoading, setConsumptionLoading] = useState(true);
   const [filterLoading, setFilterLoading] = useState(false);
   const filterTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -229,37 +226,17 @@ export default function Dashboard() {
   }, [settings.productCode, settings.tariffCode, settings.gasTariffCode]);
 
   const fetchConsumption = useCallback(async () => {
-    setRecentConsumptionLoading(true);
     setConsumptionLoading(true);
-
-    const { from: from7, to: to7 } = getDateRange(7);
     const { from, to } = getDateRange(365);
-
-    const fetchRecent = async () => {
-      try {
-        const [elecRes, gasRes] = await Promise.all([
-          fetch(`/api/consumption/electricity?period_from=${from7}&period_to=${to7}`, { cache: "no-store" }),
-          fetch(`/api/consumption/gas?period_from=${from7}&period_to=${to7}`, { cache: "no-store" }),
-        ]);
-        if (elecRes.ok) { const d = await elecRes.json(); setRecentElectricityData(d.results ?? []); }
-        if (gasRes.ok) { const d = await gasRes.json(); setRecentGasData(d.results ?? []); }
-      } catch {}
-      setRecentConsumptionLoading(false);
-    };
-
-    const fetchFull = async () => {
-      try {
-        const [elecRes, gasRes] = await Promise.all([
-          fetch(`/api/consumption/electricity?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
-          fetch(`/api/consumption/gas?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
-        ]);
-        if (elecRes.ok) { const d = await elecRes.json(); setElectricityData(d.results ?? []); }
-        if (gasRes.ok) { const d = await gasRes.json(); setGasData(d.results ?? []); }
-      } catch {}
-      setConsumptionLoading(false);
-    };
-
-    await Promise.all([fetchRecent(), fetchFull()]);
+    try {
+      const [elecRes, gasRes] = await Promise.all([
+        fetch(`/api/consumption/electricity?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
+        fetch(`/api/consumption/gas?period_from=${from}&period_to=${to}`, { cache: "no-store" }),
+      ]);
+      if (elecRes.ok) { const d = await elecRes.json(); setElectricityData(d.results ?? []); }
+      if (gasRes.ok) { const d = await gasRes.json(); setGasData(d.results ?? []); }
+    } catch {}
+    setConsumptionLoading(false);
   }, []);
 
   useEffect(() => { fetchRates(); fetchConsumption(); }, [fetchRates, fetchConsumption]);
@@ -318,7 +295,6 @@ export default function Dashboard() {
   }
 
   const dataLoading = consumptionLoading || filterLoading;
-  const spendLoading = recentConsumptionLoading || filterLoading;
 
   const sectionLabel: React.CSSProperties = {
     color: "rgba(0,240,255,0.80)",
@@ -359,9 +335,7 @@ export default function Dashboard() {
           {view !== "settings" && (
             <RangeFilter
               preset={preset}
-              selectedDate={selectedDate}
               onPreset={(p) => triggerFilter(() => setPreset(p))}
-              onDayChange={(d) => triggerFilter(() => setSelectedDate(d))}
               customFrom={customFrom}
               customTo={customTo}
               onCustomChange={(from, to) => triggerFilter(() => { setCustomFrom(from); setCustomTo(to); })}
@@ -384,23 +358,21 @@ export default function Dashboard() {
               onGoToSettings={() => setView("settings")}
             />
 
+            <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#00F0FF", background: "rgba(0,240,255,0.08)", border: "1px solid rgba(0,240,255,0.30)", borderRadius: 8, padding: "4px 10px" }}>
+                <span>⚡</span> Electricity
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "#BF5FFF", background: "rgba(191,95,255,0.08)", border: "1px solid rgba(191,95,255,0.30)", borderRadius: 8, padding: "4px 10px" }}>
+                <span>🔥</span> Gas
+              </span>
+            </div>
+
             <div>
               <p style={sectionLabel}>{preset === "1D" ? label.charAt(0).toUpperCase() + label.slice(1) : label} at a glance</p>
               <StatsRow days={dailyCosts} periodLabel={label} loading={dataLoading} />
             </div>
 
-            <SpendToday
-              electricityData={recentElectricityData}
-              gasData={recentGasData}
-              allElecRates={allElecRates}
-              allGasRates={allGasRates}
-              fallbackElecRate={fallbackElecRate}
-              gasUnitRate={gasRateValue}
-              settings={settings}
-              displayDate={selectedDate}
-              onRefresh={fetchConsumption}
-              loading={spendLoading}
-            />
+            <MonthCompare yearCosts={yearCosts} loading={consumptionLoading} />
 
             <div>
               <p style={sectionLabel}>Insights</p>

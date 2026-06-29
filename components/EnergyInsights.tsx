@@ -94,6 +94,39 @@ function rateTrend(rates: Rate[]): { direction: "up" | "down" | "flat"; pct: num
   return { direction: pct > 1 ? "up" : pct < -1 ? "down" : "flat", pct: Math.abs(pct) };
 }
 
+// This week vs last week electricity usage (Mon-based UK week)
+function weekVsLastWeek(dailyCosts: DayCost[]): { pct: number; direction: "up" | "down" | "flat" } | null {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const daysFromMon = (dayOfWeek + 6) % 7; // Mon=0 … Sun=6
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - daysFromMon);
+  thisMonday.setHours(0, 0, 0, 0);
+  const lastMonday = new Date(thisMonday);
+  lastMonday.setDate(thisMonday.getDate() - 7);
+  const lastSunday = new Date(thisMonday);
+  lastSunday.setDate(thisMonday.getDate() - 1);
+
+  const thisWeek = dailyCosts.filter((d) => {
+    const dt = new Date(d.dateKey);
+    return dt >= thisMonday && dt <= now;
+  });
+  const lastWeek = dailyCosts.filter((d) => {
+    const dt = new Date(d.dateKey);
+    return dt >= lastMonday && dt <= lastSunday;
+  });
+
+  if (lastWeek.length < 5) return null;
+  // Compare same number of days to avoid bias (e.g. Mon–Wed this week vs Mon–Wed last week)
+  const compareCount = Math.min(thisWeek.length, lastWeek.length);
+  if (compareCount === 0) return null;
+  const thisKwh = thisWeek.slice(0, compareCount).reduce((s, d) => s + d.electricityKwh, 0);
+  const lastKwh = lastWeek.slice(0, compareCount).reduce((s, d) => s + d.electricityKwh, 0);
+  if (lastKwh === 0) return null;
+  const pct = Math.round(((thisKwh - lastKwh) / lastKwh) * 100);
+  return { pct: Math.abs(pct), direction: pct > 2 ? "up" : pct < -2 ? "down" : "flat" };
+}
+
 // Best rate day in the last 14 days
 function bestRateDay(rates: Rate[]): { label: string; value: number } | null {
   const recent = rates
@@ -144,6 +177,7 @@ export default function EnergyInsights({ electricityData, gasData, allElecRates,
   const wkRatio = dailyCosts.length >= 5 ? weekendVsWeekday(dailyCosts) : null;
   const trend = allElecRates.length >= 6 ? rateTrend(allElecRates) : null;
   const bestDay = allElecRates.length > 0 ? bestRateDay(allElecRates) : null;
+  const weekTrend = dailyCosts.length >= 7 ? weekVsLastWeek(dailyCosts) : null;
 
   const insights: InsightCardProps[] = [];
 
@@ -160,10 +194,10 @@ export default function EnergyInsights({ electricityData, gasData, allElecRates,
   if (cheapWindow) {
     insights.push({
       icon: <Clock size={14} />,
-      label: "Cheapest hours",
+      label: "Quietest hours",
       headline: `${cheapWindow.start} – ${cheapWindow.end}`,
-      detail: "Your lowest consumption window. Schedule washing machines, dishwashers or EV charging here.",
-      accentColor: "#39FF14",
+      detail: "The 2-hour window when you historically use the least electricity. Good time for high-demand appliances.",
+      accentColor: "#00F0FF",
     });
   }
 
@@ -184,6 +218,23 @@ export default function EnergyInsights({ electricityData, gasData, allElecRates,
     });
   }
 
+  if (weekTrend) {
+    const TrendIcon = weekTrend.direction === "up" ? TrendingUp : TrendingDown;
+    insights.push({
+      icon: <TrendIcon size={14} />,
+      label: "Usage trend",
+      headline: weekTrend.direction === "flat"
+        ? "On track with last week"
+        : `${weekTrend.direction === "up" ? "↑" : "↓"} ${weekTrend.pct}% this week`,
+      detail: weekTrend.direction === "flat"
+        ? "Electricity usage this week is in line with the same period last week."
+        : weekTrend.direction === "down"
+        ? "You're using less electricity than the same days last week."
+        : "You're using more electricity than the same days last week.",
+      accentColor: weekTrend.direction === "up" ? "#FF2D78" : weekTrend.direction === "down" ? "#39FF14" : "rgba(240,238,255,0.72)",
+    });
+  }
+
   if (wkRatio && Math.abs(wkRatio.weekend - wkRatio.weekday) > 0.05) {
     const higher = wkRatio.weekend > wkRatio.weekday ? "weekends" : "weekdays";
     const diff = Math.abs(wkRatio.weekend - wkRatio.weekday).toFixed(1);
@@ -192,7 +243,7 @@ export default function EnergyInsights({ electricityData, gasData, allElecRates,
       label: "Weekend vs weekday",
       headline: `+${diff} kWh on ${higher}`,
       detail: `You use more electricity on ${higher} on average. This could reflect home vs office patterns.`,
-      accentColor: "#BF5FFF",
+      accentColor: "#00F0FF",
     });
   } else if (bestDay) {
     insights.push({
