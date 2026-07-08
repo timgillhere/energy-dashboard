@@ -138,7 +138,20 @@ function bestRateDay(rates: Rate[]): { label: string; value: number } | null {
 
 export default function EnergyInsights({ electricityData, gasData, allElecRates, dailyCosts, loading }: EnergyInsightsProps) {
   if (loading) {
-    return <LoadingGif height={106} />;
+    const shell: React.CSSProperties = {
+      flex: "1 1 180px", minWidth: 160,
+      background: "linear-gradient(135deg, #0C0C1A 0%, #110A1E 100%)",
+      border: "1px solid rgba(255,0,110,0.22)",
+      borderRadius: 18, padding: "14px 16px",
+      boxShadow: "0 0 16px rgba(255,0,110,0.06)",
+    };
+    return (
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={shell}><LoadingGif height={78} /></div>
+        ))}
+      </div>
+    );
   }
 
   if (electricityData.length === 0 && allElecRates.length === 0) return null;
