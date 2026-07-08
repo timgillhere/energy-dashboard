@@ -3,10 +3,12 @@
 import { useMemo, useState } from "react";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import type { DayCost } from "@/lib/dataUtils";
 
 interface CalendarHeatmapProps {
   days: DayCost[];
+  loading?: boolean;
 }
 
 const CELL = 12;
@@ -78,10 +80,27 @@ function buildCalendar(days: DayCost[]) {
   return { weeks, index, thresholds, today };
 }
 
-export default function CalendarHeatmap({ days }: CalendarHeatmapProps) {
+export default function CalendarHeatmap({ days, loading }: CalendarHeatmapProps) {
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
   const { weeks, index, thresholds, today } = useMemo(() => buildCalendar(days), [days]);
+
+  if (loading) {
+    return (
+      <Card>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+            Annual Spend Calendar
+          </p>
+          <InfoTip
+            content="Daily total energy spend over the past year. Each square is one day — brighter pink = higher spend. Shows seasonal patterns, outliers, and gaps in smart meter data."
+            width={240}
+          />
+        </div>
+        <LoadingGif height={160} />
+      </Card>
+    );
+  }
 
   if (days.length === 0) return null;
 

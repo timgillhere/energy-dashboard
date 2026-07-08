@@ -5,12 +5,14 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import type { Rate } from "@/lib/types";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
 interface RateTrendChartProps {
   elecRates: Rate[];
   gasRates: Rate[];
+  loading?: boolean;
 }
 
 type Fuel = "electricity" | "gas";
@@ -48,7 +50,7 @@ function rollingAvg(values: number[], window: number): (number | null)[] {
   });
 }
 
-export default function RateTrendChart({ elecRates, gasRates }: RateTrendChartProps) {
+export default function RateTrendChart({ elecRates, gasRates, loading }: RateTrendChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
   const [fuel, setFuel] = useState<Fuel>("electricity");
@@ -203,7 +205,9 @@ export default function RateTrendChart({ elecRates, gasRates }: RateTrendChartPr
         </div>
       </div>
 
-      {hasData ? (
+      {loading ? (
+        <LoadingGif height={220} />
+      ) : hasData ? (
         <div style={{ height: 220, position: "relative" }}>
           <canvas ref={canvasRef} />
         </div>

@@ -5,11 +5,13 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import type { DayCost } from "@/lib/dataUtils";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
 interface CostTrendChartProps {
   days: DayCost[];
+  loading?: boolean;
 }
 
 type ViewMode = "combined" | "electricity" | "gas";
@@ -22,7 +24,7 @@ function rollingAvg(values: (number | null)[], window: number): (number | null)[
   });
 }
 
-export default function CostTrendChart({ days }: CostTrendChartProps) {
+export default function CostTrendChart({ days, loading }: CostTrendChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
   const [mode, setMode] = useState<ViewMode>("combined");
@@ -224,7 +226,9 @@ export default function CostTrendChart({ days }: CostTrendChartProps) {
         </div>
       </div>
 
-      {days.length === 0 ? (
+      {loading ? (
+        <LoadingGif height={220} />
+      ) : days.length === 0 ? (
         <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(240,238,255,0.52)", fontSize: 13 }}>
           No consumption data yet.
         </div>

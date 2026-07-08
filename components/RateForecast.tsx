@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Card from "./Card";
+import LoadingGif from "./LoadingGif";
 import type { Rate } from "@/lib/types";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 
@@ -84,11 +85,25 @@ function TableRow({ row, elecAvg, gasAvg, compact }: { row: DayRow; elecAvg: num
 interface RateForecastProps {
   elecRates: Rate[];
   gasRates: Rate[];
+  loading?: boolean;
 }
 
-export default function RateForecast({ elecRates, gasRates }: RateForecastProps) {
+export default function RateForecast({ elecRates, gasRates, loading }: RateForecastProps) {
   const [historyOpen, setHistoryOpen] = useState(false);
   const { isMobile } = useBreakpoint();
+
+  if (loading) {
+    return (
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+            Rates
+          </p>
+        </div>
+        <LoadingGif height={160} />
+      </Card>
+    );
+  }
 
   if (elecRates.length === 0) return null;
 

@@ -312,27 +312,27 @@ export default function Dashboard() {
 
             <div>
               <p style={sectionLabel}>Weekly usage rhythm</p>
-              <WeeklyHeatmap electricityData={electricityData} />
+              <WeeklyHeatmap electricityData={electricityData} loading={dataLoading} />
             </div>
 
             <div>
               <p style={sectionLabel}>Annual spend calendar</p>
-              <CalendarHeatmap days={yearCosts} />
+              <CalendarHeatmap days={yearCosts} loading={costLoading} />
             </div>
 
             <div>
               <p style={sectionLabel}>Spend trend — last 90 days</p>
-              <CostTrendChart days={trendCosts} />
+              <CostTrendChart days={trendCosts} loading={costLoading} />
             </div>
 
             <div>
               <p style={sectionLabel}>Tracker rates</p>
-              <RateForecast elecRates={allElecRates} gasRates={allGasRates} />
+              <RateForecast elecRates={allElecRates} gasRates={allGasRates} loading={ratesLoading} />
             </div>
 
             <div>
               <p style={sectionLabel}>Rate history — 365 days</p>
-              <RateTrendChart elecRates={allElecRates} gasRates={allGasRates} />
+              <RateTrendChart elecRates={allElecRates} gasRates={allGasRates} loading={ratesLoading} />
             </div>
           </div>
         )}

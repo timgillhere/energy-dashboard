@@ -3,12 +3,14 @@
 import { useMemo, useState } from "react";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import { buildWeeklyHeatmap, SLOT_LABELS } from "@/lib/dataUtils";
 import type { ConsumptionInterval } from "@/lib/types";
 import { useBreakpoint } from "@/lib/useBreakpoint";
 
 interface WeeklyHeatmapProps {
   electricityData: ConsumptionInterval[];
+  loading?: boolean;
 }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -16,7 +18,7 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 // Time label rows: show label every 6 slots (3h intervals)
 const TIME_LABEL_SLOTS = new Set([0, 6, 12, 18, 24, 30, 36, 42]);
 
-export default function WeeklyHeatmap({ electricityData }: WeeklyHeatmapProps) {
+export default function WeeklyHeatmap({ electricityData, loading }: WeeklyHeatmapProps) {
   const { isMobile } = useBreakpoint();
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
@@ -27,6 +29,23 @@ export default function WeeklyHeatmap({ electricityData }: WeeklyHeatmapProps) {
     for (const row of grid) for (const v of row) if (v > max) max = v;
     return max || 1;
   }, [grid]);
+
+  if (loading) {
+    return (
+      <Card>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+          <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+            Weekly Rhythm
+          </p>
+          <InfoTip
+            content="Average electricity consumption by time of day and day of week, across all your available history. Brighter = higher average use. Reveals your weekly lifestyle pattern."
+            width={230}
+          />
+        </div>
+        <LoadingGif height={280} />
+      </Card>
+    );
+  }
 
   if (electricityData.length === 0) return null;
 
