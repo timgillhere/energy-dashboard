@@ -100,7 +100,7 @@ export default function WeekCompare({ yearCosts, loading }: WeekCompareProps) {
           <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
             This week vs last week
           </p>
-          <p style={{ color: "rgba(240,238,255,0.40)", fontSize: 11, marginTop: 2 }}>
+          <p style={{ color: "rgba(240,238,255,0.62)", fontSize: 13, marginTop: 2 }}>
             Mon – {todayName} (same {compareCount} day{compareCount !== 1 ? "s" : ""})
           </p>
         </div>

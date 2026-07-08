@@ -5,11 +5,13 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import type { DayCost } from "@/lib/dataUtils";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
 
 interface MonthlyChartProps {
   days: DayCost[];
+  loading?: boolean;
 }
 
 function groupByMonth(days: DayCost[]) {
@@ -31,7 +33,7 @@ function groupByMonth(days: DayCost[]) {
     .map(([, v]) => v);
 }
 
-export default function MonthlyChart({ days }: MonthlyChartProps) {
+export default function MonthlyChart({ days, loading }: MonthlyChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -117,19 +119,32 @@ export default function MonthlyChart({ days }: MonthlyChartProps) {
     return () => chartRef.current?.destroy();
   }, [days]);
 
+  const header = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+      <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        Monthly Spend
+      </p>
+      <InfoTip
+        content="Monthly energy spend over the past 12 months. Electricity and gas stacked. The current month (*) is partial and will increase. Days outside the 14-day rate window use an estimated rate."
+        width={250}
+      />
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <Card>
+        {header}
+        <LoadingGif height={240} />
+      </Card>
+    );
+  }
+
   if (days.length === 0) return null;
 
   return (
     <Card>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
-          Monthly Spend
-        </p>
-        <InfoTip
-          content="Monthly energy spend over the past 12 months. Electricity and gas stacked. The current month (*) is partial and will increase. Days outside the 14-day rate window use an estimated rate."
-          width={250}
-        />
-      </div>
+      {header}
       <div style={{ height: 240, position: "relative" }}>
         <canvas ref={canvasRef} />
       </div>

@@ -297,7 +297,7 @@ export default function Dashboard() {
 
             <div>
               <p style={sectionLabel}>Monthly spend — last 12 months</p>
-              <MonthlyChart days={yearCosts} />
+              <MonthlyChart days={yearCosts} loading={costLoading} />
             </div>
 
             <div>
@@ -307,7 +307,7 @@ export default function Dashboard() {
 
             <div>
               <p style={sectionLabel}>Usage patterns by time of day</p>
-              <UsagePatterns electricityData={electricityData} gasData={gasData} />
+              <UsagePatterns electricityData={electricityData} gasData={gasData} loading={dataLoading} />
             </div>
 
             <div>

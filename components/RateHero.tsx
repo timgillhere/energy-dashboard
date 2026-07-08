@@ -68,7 +68,7 @@ function RateTile({
         <span style={{ fontSize: compact ? 42 : 52, color: "rgba(240,238,255,0.18)", fontWeight: 800, lineHeight: 1 }}>—</span>
       )}
 
-      <p style={{ color: "rgba(240,238,255,0.45)", fontSize: 11, marginTop: 6 }}>
+      <p style={{ color: "rgba(240,238,255,0.62)", fontSize: 13, marginTop: 6 }}>
         + {standingCharge.toFixed(1)}p/day sc
         {slotEnd && <span style={{ marginLeft: 8 }}>· until {slotEnd}</span>}
       </p>

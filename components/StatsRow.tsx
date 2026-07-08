@@ -46,7 +46,7 @@ function StatCard({ icon, label, value, sub, tip, accent = "#F0EEFF", glowColor 
       <p style={{ fontSize: 24, fontWeight: 800, color: accent, letterSpacing: "-0.02em", lineHeight: 1, textShadow: `0 0 16px ${glow}60` }}>
         {value}
       </p>
-      {sub && <p style={{ fontSize: 11, color: "rgba(240,238,255,0.50)", marginTop: 4 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: 13, color: "rgba(240,238,255,0.62)", marginTop: 4 }}>{sub}</p>}
     </div>
   );
 }

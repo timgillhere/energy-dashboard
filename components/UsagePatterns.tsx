@@ -5,6 +5,7 @@ import { Chart } from "chart.js";
 import "@/lib/chartSetup";
 import Card from "./Card";
 import { InfoTip } from "./Tooltip";
+import LoadingGif from "./LoadingGif";
 import { buildAveragePattern, SLOT_LABELS } from "@/lib/dataUtils";
 import type { ConsumptionInterval } from "@/lib/types";
 import { CHART_DEFAULTS } from "@/lib/chartSetup";
@@ -12,9 +13,10 @@ import { CHART_DEFAULTS } from "@/lib/chartSetup";
 interface UsagePatternsProps {
   electricityData: ConsumptionInterval[];
   gasData: ConsumptionInterval[];
+  loading?: boolean;
 }
 
-export default function UsagePatterns({ electricityData, gasData }: UsagePatternsProps) {
+export default function UsagePatterns({ electricityData, gasData, loading }: UsagePatternsProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart | null>(null);
 
@@ -107,17 +109,30 @@ export default function UsagePatterns({ electricityData, gasData }: UsagePattern
   const peakTime = SLOT_LABELS[peakSlot];
   const hasData = electricityData.length > 0;
 
+  const header = (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+      <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
+        Usage Patterns
+      </p>
+      <InfoTip
+        content="Your average electricity and gas consumption by time of day, calculated across all available data. Helps identify when you habitually use the most energy."
+        width={220}
+      />
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <Card>
+        {header}
+        <LoadingGif height={160} />
+      </Card>
+    );
+  }
+
   return (
     <Card>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <p style={{ color: "rgba(240,238,255,0.72)", fontSize: 12, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase" }}>
-          Usage Patterns
-        </p>
-        <InfoTip
-          content="Your average electricity and gas consumption by time of day, calculated across all available data. Helps identify when you habitually use the most energy."
-          width={220}
-        />
-      </div>
+      {header}
 
       {hasData && (
         <p style={{ color: "rgba(240,238,255,0.60)", fontSize: 12, marginBottom: 12 }}>
